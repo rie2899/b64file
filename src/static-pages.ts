@@ -575,7 +575,7 @@ function footer(): string {
         <strong>b64file</strong>
       </div>
       <p class="footer-tagline">由爱而生 · 数据不出浏览器 · 免费无广告</p>
-      <p class="footer-status">engine rfc4648 · 62 tests · 0 cookies · 0 trackers</p>
+      <p class="footer-status">engine rfc4648 · 67 tests · 0 cookies · 0 trackers</p>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>
