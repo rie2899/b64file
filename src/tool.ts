@@ -1,0 +1,525 @@
+import {
+  bytesToUtf8,
+  decodeBase64ToBytes,
+  encodeBytesToBase64,
+  normalizeBase64Input,
+  utf8ToBytes,
+  validateBase64,
+  type NormalizeResult,
+  type ValidationResult
+} from './lib/base64';
+import { detectFileType, type FileCategory } from './lib/filetype';
+import { extractBase64FilesFromJson, extractBase64FromJsonFragment, type ExtractedB64File } from './lib/json-extract';
+import { trackEvent } from './lib/analytics';
+
+const MAX_INPUT_CHARS = 200_000_000; // ~150 MB decoded
+const MAX_FILE_BYTES = 100 * 1024 * 1024;
+const BIG_FILE_BYTES = 20 * 1024 * 1024;
+const SHOW_OUTPUT_LIMIT = 10_000;
+
+const CATEGORY_ICONS: Record<FileCategory | 'unknown', string> = {
+  image: '🖼️',
+  document: '📄',
+  archive: '📦',
+  audio: '🎵',
+  video: '🎬',
+  binary: '⚙️',
+  text: '📝',
+  unknown: '❓'
+};
+
+export function initTool(): void {
+  const tool = document.querySelector<HTMLElement>('#tool');
+  if (!tool || tool.dataset.initialized === '1') return;
+  tool.dataset.initialized = '1';
+  const activateMode = initTabs(tool);
+  initToFile(tool);
+  const handleExternalFile = initToBase64(tool);
+  initTextMode(tool);
+
+  // Ctrl+V a screenshot (or any clipboard file) anywhere → straight to encode mode
+  document.addEventListener('paste', (e) => {
+    const file = e.clipboardData?.files?.[0];
+    if (!file) return;
+    e.preventDefault();
+    activateMode('to-base64');
+    trackEvent('tool', 'paste_file', file.type || 'unknown');
+    void handleExternalFile(file);
+    tool.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+if (typeof document !== 'undefined' && document.querySelector('#tool')) {
+  initTool();
+}
+
+/* ---------- tabs ---------- */
+
+function initTabs(tool: HTMLElement): (mode: string) => void {
+  const tabs = Array.from(tool.querySelectorAll<HTMLButtonElement>('.mode-tab'));
+  const panels = Array.from(tool.querySelectorAll<HTMLElement>('.mode-panel'));
+  const activate = (mode: string) => {
+    tabs.forEach((t) => t.classList.toggle('active', t.dataset.mode === mode));
+    panels.forEach((p) => {
+      p.hidden = p.dataset.panel !== mode;
+    });
+  };
+  tabs.forEach((t) =>
+    t.addEventListener('click', () => {
+      activate(t.dataset.mode ?? 'to-file');
+      trackEvent('tool', 'mode_switch', t.dataset.mode ?? '');
+    })
+  );
+  activate(tool.dataset.defaultMode ?? 'to-file');
+  return activate;
+}
+
+/* ---------- Base64 → file ---------- */
+
+function initToFile(tool: HTMLElement): void {
+  const input = tool.querySelector<HTMLTextAreaElement>('#b64-input');
+  const diagnosis = tool.querySelector<HTMLElement>('#b64-diagnosis');
+  const result = tool.querySelector<HTMLElement>('#b64-result');
+  if (!input || !diagnosis || !result) return;
+
+  const loadBtn = tool.querySelector<HTMLButtonElement>('#b64-load-file');
+  const fileInput = tool.querySelector<HTMLInputElement>('#b64-file-input');
+  const clearBtn = tool.querySelector<HTMLButtonElement>('#b64-clear');
+  let timer: number | undefined;
+
+  const run = () => {
+    const raw = input.value;
+    if (!raw.trim()) {
+      diagnosis.hidden = true;
+      result.hidden = true;
+      return;
+    }
+    if (raw.length > MAX_INPUT_CHARS) {
+      diagnosis.hidden = false;
+      diagnosis.innerHTML = `<ul class="diag-list"><li class="err">✕ 输入超过 ${Math.floor(MAX_INPUT_CHARS / 1_000_000)} M 字符上限，请拆分处理</li></ul>`;
+      result.hidden = true;
+      return;
+    }
+
+    // JSON API responses with embedded Base64 files — extract instead of decoding
+    const trimmedHead = raw.trimStart()[0];
+    if (trimmedHead === '[' || trimmedHead === '{') {
+      const extracted = extractBase64FilesFromJson(raw);
+      if (extracted && extracted.length > 0) {
+        diagnosis.hidden = false;
+        diagnosis.innerHTML = `<ul class="diag-list">
+          <li class="ok">✓ 检测到 JSON 数据，已自动提取 ${extracted.length} 个 Base64 文件</li>
+          <li class="info">ℹ 文件来自接口返回的字段，逐个下载即可</li>
+        </ul>`;
+        renderJsonFilesResult(result, extracted);
+        result.hidden = false;
+        return;
+      }
+    }
+
+    // Damaged / partially-copied JSON — recover Base64 runs between punctuation
+    if (/["'\[\]{}]/.test(raw)) {
+      const recovered = extractBase64FromJsonFragment(raw);
+      if (recovered && recovered.length > 0) {
+        diagnosis.hidden = false;
+        diagnosis.innerHTML = `<ul class="diag-list">
+          <li class="ok">✓ 检测到疑似接口数据（复制不完整），已恢复提取 ${recovered.length} 个 Base64 文件</li>
+          <li class="info">ℹ 建议重新完整复制接口返回以获得原始文件名</li>
+        </ul>`;
+        renderJsonFilesResult(result, recovered);
+        result.hidden = false;
+        return;
+      }
+    }
+
+    const n = normalizeBase64Input(raw);
+    const v = validateBase64(n.normalized);
+    renderDiagnosis(diagnosis, n, v);
+    diagnosis.hidden = false;
+
+    if (!v.valid) {
+      result.hidden = true;
+      return;
+    }
+
+    try {
+      const bytes = decodeBase64ToBytes(n.normalized);
+      renderFileResult(result, bytes, n.detectedMimeType);
+      result.hidden = false;
+    } catch {
+      diagnosis.innerHTML +=
+        '<ul class="diag-list"><li class="err">✕ 解码失败：内容可能不完整，请重新复制完整数据</li></ul>';
+      result.hidden = true;
+    }
+  };
+
+  input.addEventListener('input', () => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(run, 250);
+  });
+
+  loadBtn?.addEventListener('click', () => fileInput?.click());
+  fileInput?.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    if (file) {
+      input.value = await file.text();
+      run();
+    }
+  });
+  clearBtn?.addEventListener('click', () => {
+    input.value = '';
+    run();
+    input.focus();
+  });
+}
+
+function renderDiagnosis(el: HTMLElement, n: NormalizeResult, v: ValidationResult): void {
+  const items: string[] = [];
+  n.transformations.forEach((t) => items.push(`<li class="ok">✓ ${escapeHtml(t)}</li>`));
+  n.warnings.forEach((w) => items.push(`<li class="warn">⚠ ${escapeHtml(w)}</li>`));
+  if (v.valid && !n.transformations.length && !n.warnings.length) {
+    items.push('<li class="ok">✓ 输入格式正确，无需修复</li>');
+  }
+  v.errors.forEach((e) => items.push(`<li class="err">✕ ${escapeHtml(e)}</li>`));
+  if (v.valid) {
+    items.push(`<li class="info">ℹ 预计解码大小：${formatBytes(v.estimatedBytes)}</li>`);
+  }
+  el.innerHTML = `<ul class="diag-list">${items.join('')}</ul>`;
+}
+
+function renderFileResult(el: HTMLElement, bytes: Uint8Array, mimeHint: string | null): void {
+  const type = detectFileType(bytes);
+  const category: FileCategory | 'unknown' = type?.category ?? 'unknown';
+  const label = type?.label ?? (mimeHint ? `未知类型（MIME 提示：${mimeHint}）` : '未知二进制文件');
+  const mime = type?.mime ?? mimeHint ?? 'application/octet-stream';
+  const ext = type?.extension ?? mimeHint?.split('/')[1]?.replace(/[^a-z0-9]/gi, '') ?? 'bin';
+  const icon = CATEGORY_ICONS[category] ?? CATEGORY_ICONS.unknown;
+
+  el.innerHTML = `
+    <div class="file-card">
+      <div class="file-icon">${icon}</div>
+      <div class="file-meta">
+        <strong>${escapeHtml(label)}</strong>
+        <span>${escapeHtml(mime)} · ${formatBytes(bytes.length)}</span>
+      </div>
+      <div class="file-actions">
+        <label class="filename-label">文件名
+          <input class="filename-input" id="dl-name" value="b64file.${escapeHtml(ext)}" />
+        </label>
+        <button class="btn primary" id="dl-btn" type="button">下载文件</button>
+      </div>
+    </div>
+    <div class="preview" id="img-preview" hidden></div>`;
+
+  el.querySelector('#dl-btn')?.addEventListener('click', () => {
+    const nameInput = el.querySelector<HTMLInputElement>('#dl-name');
+    const name = nameInput?.value.trim() || `b64file.${ext}`;
+    trackEvent('tool', 'download_file', mime);
+    downloadBytes(bytes, name, mime);
+  });
+
+  const preview = el.querySelector<HTMLElement>('#img-preview');
+  if (category === 'image' && preview && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+    try {
+      const blob = new Blob([bytes as unknown as BlobPart], { type: mime });
+      const url = URL.createObjectURL(blob);
+      preview.innerHTML = `<img src="${url}" alt="图片预览" />`;
+      preview.hidden = false;
+    } catch {
+      /* preview is optional; download still works */
+    }
+  }
+}
+
+function renderJsonFilesResult(el: HTMLElement, files: ExtractedB64File[]): void {
+  const cards = files
+    .map((file, index) => {
+      try {
+        const bytes = decodeBase64ToBytes(file.b64);
+        const type = detectFileType(bytes);
+        const category: FileCategory | 'unknown' = type?.category ?? 'unknown';
+        const mime = type?.mime ?? 'application/octet-stream';
+        const ext = type?.extension ?? 'bin';
+        const icon = CATEGORY_ICONS[category] ?? CATEGORY_ICONS.unknown;
+        const baseName = file.label.replace(/\.[a-z0-9]+$/i, '') || `file-${index + 1}`;
+        return `
+          <div class="file-card" data-file-index="${index}">
+            <div class="file-icon">${icon}</div>
+            <div class="file-meta">
+              <strong>${escapeHtml(file.label)}</strong>
+              <span>${escapeHtml(type?.label ?? '未知类型')} · ${escapeHtml(mime)} · ${formatBytes(bytes.length)}</span>
+            </div>
+            <div class="file-actions">
+              <label class="filename-label">文件名
+                <input class="filename-input" value="${escapeHtml(baseName)}.${escapeHtml(ext)}" />
+              </label>
+              <button class="btn primary dl-json-btn" type="button" data-mime="${escapeHtml(mime)}">下载文件</button>
+            </div>
+          </div>`;
+      } catch {
+        return `<div class="file-card" data-file-index="${index}"><div class="file-meta"><strong>${escapeHtml(file.label)}</strong><span class="err-inline">✕ 解码失败</span></div></div>`;
+      }
+    })
+    .join('');
+
+  el.innerHTML = `<div class="file-list">${cards}</div>`;
+
+  el.querySelectorAll<HTMLElement>('.file-card[data-file-index]').forEach((card) => {
+    const index = Number(card.dataset.fileIndex);
+    const btn = card.querySelector<HTMLButtonElement>('.dl-json-btn');
+    btn?.addEventListener('click', () => {
+      const file = files[index];
+      const nameInput = card.querySelector<HTMLInputElement>('.filename-input');
+      const name = nameInput?.value.trim() || `file-${index + 1}`;
+      try {
+        const bytes = decodeBase64ToBytes(file.b64);
+        const mime = btn.dataset.mime || 'application/octet-stream';
+        trackEvent('tool', 'download_file', 'json-extract');
+        downloadBytes(bytes, name, mime);
+      } catch {
+        /* already flagged as undecodable in the card */
+      }
+    });
+  });
+}
+
+/* ---------- file → Base64 ---------- */
+
+function initToBase64(tool: HTMLElement): (file: File) => Promise<void> | void {
+  const dropZone = tool.querySelector<HTMLElement>('#drop-zone');
+  const fileInput = tool.querySelector<HTMLInputElement>('#file-input');
+  const pickBtn = tool.querySelector<HTMLButtonElement>('#pick-file');
+  const info = tool.querySelector<HTMLElement>('#file-info');
+  const options = tool.querySelector<HTMLElement>('#encode-options');
+  const resultEl = tool.querySelector<HTMLElement>('#encode-result');
+  if (!dropZone || !fileInput || !info || !options || !resultEl) return () => {};
+
+  let currentFile: File | null = null;
+  let currentBytes: Uint8Array | null = null;
+
+  const reset = () => {
+    currentFile = null;
+    currentBytes = null;
+    info.hidden = true;
+    options.hidden = true;
+    resultEl.hidden = true;
+  };
+
+  const handleFile = async (file: File) => {
+    if (file.size > MAX_FILE_BYTES) {
+      reset();
+      info.hidden = false;
+      info.innerHTML = '<p class="err-inline">✕ 文件超过 100 MB 上限</p>';
+      return;
+    }
+    if (file.size > BIG_FILE_BYTES) {
+      const proceed = window.confirm(
+        `文件 ${formatBytes(file.size)} 较大，转换会占用较多浏览器内存，继续吗？`
+      );
+      if (!proceed) return;
+    }
+    currentFile = file;
+    currentBytes = new Uint8Array(await file.arrayBuffer());
+    const type = detectFileType(currentBytes);
+    const icon = type ? CATEGORY_ICONS[type.category] : CATEGORY_ICONS.unknown;
+    info.hidden = false;
+    info.innerHTML = `
+      <div class="file-card">
+        <div class="file-icon">${icon}</div>
+        <div class="file-meta">
+          <strong>${escapeHtml(file.name)}</strong>
+          <span>${escapeHtml(file.type || type?.mime || '未知类型')} · ${formatBytes(file.size)}</span>
+        </div>
+      </div>`;
+    options.hidden = false;
+    encode();
+  };
+
+  const encode = () => {
+    if (!currentBytes || !currentFile) return;
+    const urlSafe = (tool.querySelector('#opt-urlsafe') as HTMLInputElement)?.checked ?? false;
+    const withDataUrl = (tool.querySelector('#opt-dataurl') as HTMLInputElement)?.checked ?? false;
+    let out = encodeBytesToBase64(currentBytes, { urlSafe });
+    const mime = currentFile.type || 'application/octet-stream';
+    if (withDataUrl) out = `data:${mime};base64,${out}`;
+    renderEncodeResult(resultEl, out);
+    resultEl.hidden = false;
+  };
+
+  options.querySelectorAll('input').forEach((i) => i.addEventListener('change', encode));
+
+  ['dragover', 'dragenter'].forEach((evt) =>
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag');
+    })
+  );
+  ['dragleave', 'drop'].forEach((evt) =>
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag');
+    })
+  );
+  dropZone.addEventListener('drop', (e) => {
+    const file = e.dataTransfer?.files?.[0];
+    if (file) void handleFile(file);
+  });
+  dropZone.addEventListener('click', (e) => {
+    if (e.target === dropZone || (e.target as HTMLElement).closest('.drop-icon, p')) fileInput.click();
+  });
+  pickBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileInput.click();
+  });
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (file) void handleFile(file);
+  });
+
+  return handleFile;
+}
+
+function renderEncodeResult(el: HTMLElement, out: string): void {
+  const canShow = out.length <= SHOW_OUTPUT_LIMIT;
+  el.innerHTML = `
+    <div class="encode-output">
+      ${
+        canShow
+          ? `<textarea readonly class="mono-out" id="b64-out">${escapeHtml(out)}</textarea>`
+          : `<p class="muted">结果共 ${out.length.toLocaleString('zh-CN')} 字符，过大不展示全文，可直接复制或下载。</p>`
+      }
+      <div class="btn-row">
+        <button class="btn" id="copy-btn" type="button">复制结果</button>
+        <button class="btn" id="dl-txt-btn" type="button">下载 .txt</button>
+        <span class="copy-feedback" id="copy-feedback" hidden>已复制 ✓</span>
+      </div>
+    </div>`;
+
+  el.querySelector('#copy-btn')?.addEventListener('click', async () => {
+    if (await copyText(out)) {
+      trackEvent('tool', 'copy_result', 'encode');
+      const fb = el.querySelector<HTMLElement>('#copy-feedback');
+      if (fb) {
+        fb.hidden = false;
+        window.setTimeout(() => {
+          fb.hidden = true;
+        }, 2000);
+      }
+    }
+  });
+  el.querySelector('#dl-txt-btn')?.addEventListener('click', () => {
+    downloadText(out, 'b64file-base64.txt');
+  });
+}
+
+/* ---------- text encode/decode ---------- */
+
+function initTextMode(tool: HTMLElement): void {
+  const input = tool.querySelector<HTMLTextAreaElement>('#text-input');
+  const output = tool.querySelector<HTMLElement>('#text-output');
+  if (!input || !output) return;
+
+  let timer: number | undefined;
+
+  const run = () => {
+    const val = input.value;
+    if (!val.trim()) {
+      output.hidden = true;
+      return;
+    }
+    const checked = tool.querySelector<HTMLInputElement>('input[name="text-dir"]:checked');
+    const dir = checked?.value ?? 'encode';
+    let out: string;
+
+    if (dir === 'encode') {
+      out = encodeBytesToBase64(utf8ToBytes(val));
+    } else {
+      const n = normalizeBase64Input(val);
+      const v = validateBase64(n.normalized);
+      if (!v.valid) {
+        output.hidden = false;
+        output.innerHTML = `<p class="err-inline">✕ ${escapeHtml(v.errors[0] ?? '无法解码')}</p>`;
+        return;
+      }
+      out = bytesToUtf8(decodeBase64ToBytes(n.normalized));
+    }
+
+    output.hidden = false;
+    output.innerHTML = `
+      <pre class="text-out">${escapeHtml(out)}</pre>
+      <div class="btn-row">
+        <button class="btn" id="text-copy" type="button">复制</button>
+        <span class="copy-feedback" id="text-fb" hidden>已复制 ✓</span>
+      </div>`;
+    output.querySelector('#text-copy')?.addEventListener('click', async () => {
+      if (await copyText(out)) {
+        trackEvent('tool', 'copy_result', 'text');
+        const fb = output.querySelector<HTMLElement>('#text-fb');
+        if (fb) {
+          fb.hidden = false;
+          window.setTimeout(() => {
+            fb.hidden = true;
+          }, 2000);
+        }
+      }
+    });
+  };
+
+  input.addEventListener('input', () => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(run, 200);
+  });
+  tool.querySelectorAll<HTMLInputElement>('input[name="text-dir"]').forEach((r) =>
+    r.addEventListener('change', run)
+  );
+}
+
+/* ---------- helpers ---------- */
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(2)} MB`;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string)
+  );
+}
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    /* clipboard API unavailable or denied */
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+function downloadBytes(bytes: Uint8Array, filename: string, mime: string): void {
+  const blob = new Blob([bytes as unknown as BlobPart], { type: mime || 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+function downloadText(text: string, filename: string): void {
+  downloadBytes(utf8ToBytes(text), filename, 'text/plain;charset=utf-8');
+}
