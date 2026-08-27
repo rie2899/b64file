@@ -240,7 +240,7 @@ const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '2. 填充符缺失或多余',
-        html: '<p>Base64 长度必须是 4 的倍数，不足时以 <code>=</code> 补齐（最多 2 个）。手工复制常丢失末尾的 <code>=</code>。<strong>修复：</strong>本站工具自动补齐缺失填充、修正多余填充。</p>'
+        html: '<p>Base64 长度必须是 4 的倍数，不足时以 <code>=</code> 补齐（最多 2 个）。手工复制常丢失末尾的 <code>=</code>。<strong>修复：</strong><a href="/base64-to-file/">Base64 转文件工具</a>自动补齐缺失填充、修正多余填充。</p>'
       },
       {
         h2: '3. 数据被截断（长度 % 4 余 1）',
@@ -252,7 +252,7 @@ const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '5. Data URL 前缀未去除',
-        html: '<p><code>data:image/png;base64,</code> 这类前缀不是 Base64 的一部分，直接解码会报非法字符。<strong>修复：</strong>本站工具自动去除前缀并记录 MIME 类型。</p>'
+        html: '<p><code>data:image/png;base64,</code> 这类前缀不是 Base64 的一部分，直接解码会报非法字符。<strong>修复：</strong><a href="/base64-to-file/">转换工具</a>自动去除前缀并记录 MIME 类型。</p>'
       }
     ],
     faqs: [
@@ -598,11 +598,17 @@ function footer(): string {
 
 export function metaTags(page: PageId): string {
   const d = pageData[page] ?? pageData.home;
+  const canonical = absoluteUrl(pagePaths[page] ?? '/');
+  const ogImage = absoluteUrl('/og-image.png');
   return `<title>${d.title}</title>
     <meta name="description" content="${d.desc}" />
+    <meta name="applicable-device" content="pc,mobile" />
     <meta property="og:title" content="${d.title}" />
     <meta property="og:description" content="${d.desc}" />
-    <meta property="og:type" content="website" />`;
+    <meta property="og:type" content="website" />
+    ${canonical ? `<meta property="og:url" content="${canonical}" />` : ''}
+    ${ogImage ? `<meta property="og:image" content="${ogImage}" />` : ''}
+    <meta name="twitter:card" content="summary_large_image" />`;
 }
 
 export function canonicalTag(page: PageId): string {
@@ -647,14 +653,16 @@ function jsonLd(page: PageId): unknown[] {
         })
   });
 
-  graph.push({
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: '首页', item: absoluteUrl('/') || '/' },
-      { '@type': 'ListItem', position: 2, name: d.h1, item: url }
-    ]
-  });
+  if (page !== 'home') {
+    graph.push({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: '首页', item: absoluteUrl('/') || '/' },
+        { '@type': 'ListItem', position: 2, name: d.h1, item: url }
+      ]
+    });
+  }
 
   graph.push({
     '@context': 'https://schema.org',

@@ -29,6 +29,12 @@ export function normalizeBase64Input(raw: string): NormalizeResult {
   let input = raw;
   let detectedMimeType: string | null = null;
 
+  // BOM from editors like Notepad breaks decode at position 0
+  if (input.charCodeAt(0) === 0xfeff) {
+    transformations.push('已移除 BOM 头 / removed byte-order mark');
+    input = input.slice(1);
+  }
+
   if (input.trim().length !== input.length) {
     transformations.push('已移除首尾空白 / trimmed surrounding whitespace');
     input = input.trim();

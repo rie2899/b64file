@@ -59,7 +59,11 @@ function initTabs(tool: HTMLElement): (mode: string) => void {
   const tabs = Array.from(tool.querySelectorAll<HTMLButtonElement>('.mode-tab'));
   const panels = Array.from(tool.querySelectorAll<HTMLElement>('.mode-panel'));
   const activate = (mode: string) => {
-    tabs.forEach((t) => t.classList.toggle('active', t.dataset.mode === mode));
+    tabs.forEach((t) => {
+      const active = t.dataset.mode === mode;
+      t.classList.toggle('active', active);
+      t.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
     panels.forEach((p) => {
       p.hidden = p.dataset.panel !== mode;
     });

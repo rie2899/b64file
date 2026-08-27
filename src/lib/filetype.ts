@@ -91,6 +91,10 @@ export function detectFileType(bytes: Uint8Array): DetectedFileType | null {
       return { mime: 'video/quicktime', extension: 'mov', label: 'MOV 视频', category: 'video' };
     if (brand.startsWith('M4A'))
       return { mime: 'audio/mp4', extension: 'm4a', label: 'M4A 音频', category: 'audio' };
+    if (brand.startsWith('avif') || brand.startsWith('avis'))
+      return { mime: 'image/avif', extension: 'avif', label: 'AVIF 图片', category: 'image' };
+    if (brand.startsWith('heic') || brand.startsWith('heix') || brand.startsWith('hevc'))
+      return { mime: 'image/heic', extension: 'heic', label: 'HEIC 图片（iPhone 照片）', category: 'image' };
     return { mime: 'video/mp4', extension: 'mp4', label: 'MP4 视频', category: 'video' };
   }
 

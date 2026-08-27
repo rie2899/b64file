@@ -111,6 +111,12 @@ describe('normalizeBase64Input', () => {
     const r = normalizeBase64Input('  data:image/png;base64,\niVBORw0KGgo\n');
     expect(r.normalized).toBe('iVBORw0KGgo=');
   });
+
+  it('strips a leading BOM from editor copies', () => {
+    const r = normalizeBase64Input('\uFEFFZm9vYmFy');
+    expect(r.normalized).toBe('Zm9vYmFy');
+    expect(r.transformations.join()).toContain('BOM');
+  });
 });
 
 describe('validateBase64', () => {
@@ -194,6 +200,16 @@ describe('detectFileType', () => {
   it('detects MP4 via ftyp brand', () => {
     const bytes = new Uint8Array([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d]);
     expect(detectFileType(bytes)?.extension).toBe('mp4');
+  });
+
+  it('detects AVIF via ftyp brand', () => {
+    const bytes = new Uint8Array([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66]);
+    expect(detectFileType(bytes)?.extension).toBe('avif');
+  });
+
+  it('detects HEIC (iPhone photos) via ftyp brand', () => {
+    const bytes = new Uint8Array([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x68, 0x65, 0x69, 0x63]);
+    expect(detectFileType(bytes)?.extension).toBe('heic');
   });
 
   it('detects MP3 via ID3 tag', () => {

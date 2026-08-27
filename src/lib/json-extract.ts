@@ -18,7 +18,7 @@ export interface ExtractedB64File {
 export function extractBase64FilesFromJson(text: string): ExtractedB64File[] | null {
   let data: unknown;
   try {
-    data = JSON.parse(text);
+    data = JSON.parse(text.replace(/^\uFEFF/, ''));
   } catch {
     return null;
   }

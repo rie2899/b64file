@@ -50,6 +50,12 @@ describe('extractBase64FilesFromJson', () => {
     expect(extractBase64FilesFromJson('{"a":1,"b":"短文本"}')).toEqual([]);
   });
 
+  it('strips BOM before parsing JSON', () => {
+    const json = '\uFEFF' + JSON.stringify({ fileContent: makePdfB64('bom prefixed') });
+    const files = extractBase64FilesFromJson(json);
+    expect(files!.length).toBe(1);
+  });
+
   it('handles nested objects and arrays', () => {
     const json = JSON.stringify({
       data: {

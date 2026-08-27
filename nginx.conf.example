@@ -1,0 +1,62 @@
+# b64file nginx 配置模板
+# 放到 /etc/nginx/conf.d/b64file.conf，证书路径按实际情况修改
+
+server {
+    listen 80;
+    server_name b64file.cn www.b64file.cn;
+    return 301 https://b64file.cn$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name www.b64file.cn;
+    ssl_certificate     /etc/nginx/ssl/b64file.cn.pem;
+    ssl_certificate_key /etc/nginx/ssl/b64file.cn.key;
+    return 301 https://b64file.cn$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name b64file.cn;
+
+    root /var/www/b64file;
+    index index.html;
+
+    ssl_certificate     /etc/nginx/ssl/b64file.cn.pem;
+    ssl_certificate_key /etc/nginx/ssl/b64file.cn.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    # 安全头
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+
+    # 带指纹的静态资源缓存一年
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # HTML 不缓存，保证更新即时生效
+    location ~* \.html$ {
+        expires -1;
+        add_header Cache-Control "no-cache";
+    }
+
+    location ~* \.(png|svg|ico|txt|xml)$ {
+        expires 7d;
+    }
+
+    # 目录形式路由
+    location / {
+        try_files $uri $uri/ $uri.html =404;
+    }
+
+    error_page 404 /404.html;
+
+    access_log /var/log/nginx/b64file.access.log;
+}

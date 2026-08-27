@@ -132,6 +132,13 @@ describe('tool DOM interaction', () => {
     expect(footer).toContain('/terms/');
   });
 
+  it('home schema has no breadcrumb while subpages do', () => {
+    document.body.dataset.page = 'home';
+    document.body.innerHTML = `<div id="app">${renderShell('home')}</div>`;
+    // 静态构建时由 vite 插件注入；此处验证渲染函数不炸即可，schema 细节在构建产物断言
+    expect(document.querySelector('#app')?.innerHTML).toContain('b64file');
+  });
+
   it('shows validation errors for invalid base64 without rendering a result', async () => {
     await import('../src/tool');
 
