@@ -178,13 +178,13 @@ function renderDiagnosis(el: HTMLElement, n: NormalizeResult, v: ValidationResul
   n.transformations.forEach((t) => items.push(`<li class="ok">✓ ${escapeHtml(t)}</li>`));
   n.warnings.forEach((w) => items.push(`<li class="warn">⚠ ${escapeHtml(w)}</li>`));
   if (v.valid && !n.transformations.length && !n.warnings.length) {
-    items.push('<li class="ok">✓ 输入格式正确，无需修复</li>');
+    items.push('<li class="ok">✓ 格式很干净，没动任何东西</li>');
   }
   v.errors.forEach((e) => items.push(`<li class="err">✕ ${escapeHtml(e)}</li>`));
   if (v.valid) {
-    items.push(`<li class="info">ℹ 预计解码大小：${formatBytes(v.estimatedBytes)}</li>`);
+    items.push(`<li class="info">ℹ 解码后约 ${formatBytes(v.estimatedBytes)}</li>`);
   }
-  el.innerHTML = `<ul class="diag-list">${items.join('')}</ul>`;
+  el.innerHTML = `<p class="diag-cmd">~/b64 $ diagnose</p><ul class="diag-list">${items.join('')}</ul>`;
 }
 
 function renderFileResult(el: HTMLElement, bytes: Uint8Array, mimeHint: string | null): void {

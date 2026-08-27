@@ -34,32 +34,32 @@ const pageData: Record<PageId, PageContent> = {
     desc: '免费 Base64 在线转换工具：Base64 转文件、文件转 Base64、文本编解码。自动修复 Data URL 前缀与填充符，浏览器本地处理，文件不上传。',
     h1: 'Base64 转文件 · 文件转 Base64',
     answer:
-      '粘贴 Base64 字符串还原成文件，或把任意文件编码为 Base64。支持图片、PDF、压缩包等格式，自动诊断并修复常见格式问题。全程本地处理，文件不上传服务器。',
+      '贴进来。纯 Base64、带前缀的 Data URL、甚至整段接口返回的 JSON——先自动体检，能修的都修了，修不了的告诉你坏在哪，最后把文件还给你。图片、PDF、压缩包都认识。文件不出浏览器：没有上传接口，想传也没地方传。',
     mode: 'to-file',
     sections: [
       {
-        h2: '三步完成转换',
+        h2: '怎么用：三步',
         html: `<ol class="steps">
-          <li><strong>输入内容</strong> — 粘贴 Base64 字符串，或拖放要编码的文件</li>
-          <li><strong>自动诊断</strong> — 自动检测文件类型，修复前缀、换行、填充符等常见问题</li>
-          <li><strong>下载或复制</strong> — 一键下载还原的文件，或复制编码结果</li>
+          <li><strong>贴进来</strong> — 粘贴、拖文件、Ctrl+V 截图，格式不挑</li>
+          <li><strong>看体检报告</strong> — 前缀、换行、缺失的填充符，能修的都替你修了；数据断了会明确告诉你</li>
+          <li><strong>拿走文件</strong> — 下载还原的文件，或复制编码结果</li>
         </ol>`
       },
       {
-        h2: '为什么全部本地处理',
+        h2: '为什么死磕本地处理',
         html: `<div class="grid-3">
-          <div class="mini-card"><strong>🔒 隐私</strong><p>编码解码在浏览器完成，没有上传接口，服务器只提供页面。</p></div>
-          <div class="mini-card"><strong>⚡ 速度</strong><p>不经网络往返，粘贴即可见结果，大文件也不排队。</p></div>
-          <div class="mini-card"><strong>📦 识别</strong><p>通过文件头魔数识别 PNG、PDF、ZIP 等 20+ 格式，不依赖文件名。</p></div>
+          <div class="mini-card"><strong>没有上传接口</strong><p>不是"我们承诺不看你数据"，是技术上做不到——服务器只有静态页面，连接收文件的接口都不存在。</p></div>
+          <div class="mini-card"><strong>粘贴的瞬间出结果</strong><p>不经网络往返，处理就在你设备上。你可以打开开发者工具的 Network 面板自己验证。</p></div>
+          <div class="mini-card"><strong>认文件靠文件头</strong><p>不靠扩展名：%PDF 开头就是 PDF，改成 .exe 也骗不过它。20 多种格式开箱即认。</p></div>
         </div>`
       }
     ],
     faqs: [
-      { q: 'Base64 转文件支持哪些格式？', a: '通过文件头魔数自动识别 PNG、JPEG、GIF、WebP、SVG、PDF、ZIP、GZIP、RAR、7Z、MP3、WAV、MP4 等常见格式；无法识别时提供原始二进制下载。' },
-      { q: '文件会上传到服务器吗？', a: '不会。编码与解码全部在你的浏览器中完成，服务器只提供页面本身，没有上传接口。' },
-      { q: '支持多大的文件？', a: '建议不超过 100 MB。超过 20 MB 时会提示确认，因为大文件会占用较多浏览器内存。' },
-      { q: 'Base64 是加密吗？', a: '不是。Base64 是编码方式，任何人都能还原，请勿用于保护密码等敏感数据。' },
-      { q: '解码失败怎么办？', a: '常见原因包括非法字符、填充符缺失、数据被截断。请查看 Base64 解码失败排查指南。' }
+      { q: '支持哪些格式？', a: 'PNG、JPEG、GIF、WebP、SVG、PDF、ZIP、GZIP、RAR、7Z、MP3、WAV、MP4 等二十多种，靠文件头魔数识别。不认识的内容也会给你原始二进制下载。' },
+      { q: '文件会被传到哪吗？', a: '哪也去不了。没有上传接口，服务器只发页面本身。不信的话，开着 Network 面板用一遍。' },
+      { q: '最大能处理多大？', a: '100 MB 封顶，超过 20 MB 会先跟你确认——大文件吃内存，别把你标签页搞崩了。' },
+      { q: 'Base64 是加密吗？', a: '不是，差得远。Base64 谁都能还原，别拿它保护密码。' },
+      { q: '解码失败怎么办？', a: '八成是非法字符、缺填充符或数据被截断。看解码失败排查指南，或者直接贴进来让工具告诉你坏在哪。' }
     ]
   },
   'base64-to-file': {
@@ -67,7 +67,7 @@ const pageData: Record<PageId, PageContent> = {
     desc: '粘贴 Base64 字符串，自动识别文件类型并还原为可下载文件。支持 data URL 前缀、Base64URL、缺失填充自动修复。本地处理不上传。',
     h1: 'Base64 转文件在线工具',
     answer:
-      '把 Base64 字符串还原为原始文件：粘贴内容后自动识别文件类型（图片、PDF、压缩包等），修复常见格式问题后一键下载。',
+      '粘贴 Base64，自动认出它是什么文件——看文件头，不看文件名。前缀、换行、缺填充符这些常见毛病能修的都替你修了，修不了的会告诉你数据断在哪。修好之后，一键下载。',
     mode: 'to-file',
     sections: [
       {
@@ -99,7 +99,7 @@ const pageData: Record<PageId, PageContent> = {
     desc: '拖放任意文件生成 Base64 字符串，可选 URL-safe 格式或 data URL 前缀。适合 API 对接、JSON 嵌入、前端内嵌资源。本地处理。',
     h1: '文件转 Base64 在线工具',
     answer:
-      '把图片、PDF、文档等任意文件编码为 Base64 字符串，可附加 data: 前缀直接用于网页，或选择 URL-safe 格式用于接口传输。',
+      '拖个文件进来，变成 Base64 拿走。三种格式可选：标准、URL-safe、带 data: 前缀的直接塞进网页就能用。截图党福利：Ctrl+V 粘贴截图立即出结果。',
     mode: 'to-base64',
     sections: [
       {
@@ -130,7 +130,7 @@ const pageData: Record<PageId, PageContent> = {
     desc: '粘贴图片 Base64 字符串，立即在线预览并下载为 PNG、JPG、WebP、GIF 图片文件。支持 data URL 前缀自动去除。本地处理。',
     h1: 'Base64 转图片在线工具',
     answer:
-      '粘贴图片的 Base64 编码，直接在浏览器中预览图片效果，并下载为对应格式的图片文件。支持 PNG、JPEG、GIF、WebP、BMP、ICO、SVG。',
+      '贴入图片的 Base64，先看到预览，再下载成 PNG / JPG / WebP / GIF。认格式靠文件头不看文件名——iVBOR 开头是 PNG，/9j/ 开头是 JPEG，这些你不用记。',
     mode: 'to-file',
     sections: [
       {
@@ -160,7 +160,7 @@ const pageData: Record<PageId, PageContent> = {
     desc: '上传图片生成 Base64 字符串或 data URL，可直接用于 CSS background、HTML img 标签和 JSON 数据。本地处理不上传。',
     h1: '图片转 Base64 在线工具',
     answer:
-      '上传 PNG、JPG、WebP 等图片，生成 Base64 字符串或带前缀的 data URL，复制后可直接嵌入代码。',
+      '图片拖进来（或 Ctrl+V 粘贴截图），Base64 拿走。勾上前缀可以直接塞进 CSS 和 <img>。提醒一句：体积会膨胀约 1/3，大图内嵌是下策。',
     mode: 'to-base64',
     sections: [
       {
@@ -187,7 +187,7 @@ const pageData: Record<PageId, PageContent> = {
     desc: '粘贴 PDF 的 Base64 编码，还原为 PDF 文件下载。适合电子发票、电子合同、接口返回的 PDF 数据。本地处理。',
     h1: 'Base64 转 PDF 在线工具',
     answer:
-      '把接口返回或系统导出的 PDF Base64 字符串还原为可打开的 PDF 文件。本地处理，适合电子发票、电子合同等场景。',
+      '开票系统、签署平台吐出来的 Base64 串？贴进来还原成 PDF 直接下载。开头 JVBERi 就认得那是 PDF——这个你也不用记，工具替你看着。',
     mode: 'to-file',
     sections: [
       {
@@ -209,7 +209,7 @@ const pageData: Record<PageId, PageContent> = {
     desc: '上传 PDF 文件生成 Base64 字符串，用于 API 传输、JSON 嵌入或系统对接。本地处理不上传。',
     h1: 'PDF 转 Base64 在线工具',
     answer:
-      '把 PDF 文件编码为 Base64 字符串，复制后用于接口传参、JSON 数据或跨系统传输。',
+      'PDF 拖进来，Base64 复制走。接口传参、JSON 报文、跨系统对接都能用。注意编码后体积约为原文件 1.33 倍，先确认对方字段吃不吃得下。',
     mode: 'to-base64',
     sections: [
       {
@@ -231,7 +231,7 @@ const pageData: Record<PageId, PageContent> = {
     desc: 'Base64 解码报错的 5 大原因：非法字符、填充符错误、数据截断、Base64URL 混用、Data URL 前缀。附自动修复方案。',
     h1: 'Base64 解码失败常见原因与修复方法',
     answer:
-      'Base64 解码失败通常源于非法字符、填充符问题或数据被截断。以下是五类常见错误及处理方法，本站工具可自动修复其中大部分。',
+      '解码失败不是玄学，八成是这五种之一。其中四类贴进工具就自动修好；第五种（数据截断）修不了——但工具会明确告诉你断在哪，省得瞎猜。',
     mode: 'to-file',
     sections: [
       {
@@ -266,7 +266,7 @@ const pageData: Record<PageId, PageContent> = {
     desc: '粘贴接口返回的 JSON，自动提取其中所有 Base64 文件并下载。支持复制不完整的 JSON 数据恢复，PDF、图片格式自动识别。本地处理不上传。',
     h1: 'JSON 转文件在线工具',
     answer:
-      '把接口返回 JSON 中的 Base64 内容还原为文件：粘贴完整 JSON 或复制不完整的片段，自动提取全部文件并按文件名逐个下载，全程本地处理。',
+      '接口返回的 JSON 里埋着 Base64 文件？整段贴进来，全部提取，按原文件名逐个下载。复制时丢了开头也没关系——按标点切，照样把文件捞出来。',
     mode: 'to-file',
     sections: [
       {
@@ -298,7 +298,7 @@ const pageData: Record<PageId, PageContent> = {
     desc: 'b64file 隐私政策：所有文件转换在浏览器本地完成，文件内容不上传、不存储、不记录。',
     h1: '隐私政策',
     answer:
-      'b64file 的核心承诺：你粘贴或拖入的所有内容（Base64 字符串、JSON 数据、文件）仅在浏览器内存中处理，不会上传到任何服务器，关闭页面即消失。',
+      '一句话版本：你贴进来的一切只在浏览器内存里转一圈，关掉页面就没了。服务器没有上传接口，想传也没地方传。',
     mode: 'to-file',
     sections: [
       {
@@ -337,7 +337,7 @@ const pageData: Record<PageId, PageContent> = {
     desc: 'b64file 是一个独立开发的免费 Base64 工具：本地处理、无广告、无账号。了解它为什么存在，以及背后的原则。',
     h1: '关于 b64file',
     answer:
-      'b64file 由爱而生——一个独立开发者因为一次真实的抓狂而建：接口返回的 JSON 里嵌着 PDF 的 Base64，市面上的工具要么报错，要么要求上传数据。',
+      'b64file 由爱而生——起因是一次真实的抓狂：接口返回的 JSON 里嵌着两份 PDF 的 Base64，试遍所有在线工具，得到的全是"非法字符"报错，没人告诉我贴的是 JSON，更没人帮我把文件捞出来。',
     mode: 'to-file',
     sections: [
       {
@@ -373,7 +373,7 @@ const pageData: Record<PageId, PageContent> = {
     desc: 'b64file 服务条款：服务性质、本地处理边界、免责声明与使用规范。',
     h1: '服务条款',
     answer:
-      '使用 b64file 即表示你同意以下条款。工具按"现状"免费提供，所有转换在你的浏览器本地完成。',
+      '用 b64file 就算你同意这些条款。工具按"现状"免费提供，所有转换在你浏览器里完成——我们收不到你的数据，也因此担不了数据相关的责任。',
     mode: 'to-file',
     sections: [
       {
@@ -406,7 +406,7 @@ const pageData: Record<PageId, PageContent> = {
     title: '页面不存在 - b64file',
     desc: '你访问的页面不存在或已移动。',
     h1: '页面不见了',
-    answer: '你访问的地址不存在或已移动。下面的入口可以继续使用工具。',
+    answer: '这个地址不存在，或者搬走了。别慌，工具都在顶部导航里。',
     mode: 'to-file',
     sections: [],
     faqs: []
@@ -476,6 +476,7 @@ function hero(page: PageId): string {
   const d = pageData[page] ?? pageData.home;
   return `
     <section class="hero">
+      <p class="hero-prompt" aria-hidden="true"><span class="prompt-sign">~/b64 $</span> paste --anything<span class="hero-cursor"></span></p>
       <h1>${d.h1}</h1>
       <p class="answer">${d.answer}</p>
     </section>
@@ -494,7 +495,7 @@ function toolCard(page: PageId): string {
 
       <div class="mode-panel" data-panel="to-file">
         <textarea id="b64-input" class="mono-input" rows="6" spellcheck="false"
-          placeholder="粘贴 Base64 字符串，支持 data:image/png;base64,... 等格式"></textarea>
+          placeholder="贴什么都行：纯 Base64 / data:image/png;base64,... / 整段接口返回的 JSON"></textarea>
         <div class="input-actions">
           <button id="b64-load-file" class="ghost-btn" type="button">读取 .txt / .b64 文件</button>
           <input type="file" id="b64-file-input" accept=".txt,.b64,.text,text/plain" hidden />
@@ -507,8 +508,8 @@ function toolCard(page: PageId): string {
       <div class="mode-panel" data-panel="to-base64" hidden>
         <div id="drop-zone" class="drop-zone">
           <div class="drop-icon">📄</div>
-          <p><strong>拖放文件到此处</strong> 或 <button id="pick-file" class="link-btn" type="button">点击选择</button></p>
-          <p class="muted">任意文件类型 · 上限 100 MB · 不上传服务器</p>
+          <p><strong>拖文件进来</strong>，或 <button id="pick-file" class="link-btn" type="button">点击选择</button>，截图直接 Ctrl+V 也行</p>
+          <p class="muted">任意类型 · 100 MB 封顶 · 全程不出浏览器</p>
           <input type="file" id="file-input" hidden />
         </div>
         <div id="file-info" hidden></div>
@@ -525,11 +526,11 @@ function toolCard(page: PageId): string {
           <label><input type="radio" name="text-dir" value="decode" /> Base64 → 文本</label>
         </div>
         <textarea id="text-input" class="mono-input" rows="4" spellcheck="false"
-          placeholder="输入文本或 Base64 字符串..."></textarea>
+          placeholder="输入文本或 Base64，方向在上面选"></textarea>
         <div id="text-output" class="text-output" hidden></div>
       </div>
 
-      <p class="local-note">🔒 文件与内容仅在你的浏览器中处理，不经过服务器</p>
+      <p class="local-note">文件不出浏览器——没有上传接口，想传也没地方传</p>
     </section>
   `;
 }
@@ -538,7 +539,7 @@ function contentSections(page: PageId): string {
   const d = pageData[page] ?? pageData.home;
   if (!d.sections.length) return '';
   return d.sections
-    .map((s) => `<section class="section"><h2>${s.h2}</h2>${s.html}</section>`)
+    .map((s, i) => `<section class="section"><span class="section-no">${String(i + 1).padStart(2, '0')}</span><h2>${s.h2}</h2>${s.html}</section>`)
     .join('\n');
 }
 
@@ -574,6 +575,7 @@ function footer(): string {
         <strong>b64file</strong>
       </div>
       <p class="footer-tagline">由爱而生 · 数据不出浏览器 · 免费无广告</p>
+      <p class="footer-status">engine rfc4648 · 62 tests · 0 cookies · 0 trackers</p>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>
