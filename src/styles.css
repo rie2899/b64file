@@ -82,6 +82,9 @@ a:hover { text-decoration: underline; }
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   font-size: 20px;
   font-weight: 800;
   color: var(--ink);
@@ -90,6 +93,14 @@ a:hover { text-decoration: underline; }
 }
 
 .brand:hover { text-decoration: none; }
+
+.brand-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  flex: none;
+  display: block;
+}
 
 .brand-mark {
   background: var(--accent-grad);
@@ -645,12 +656,28 @@ details p { margin: 0; padding: 0 16px 14px; font-size: 14.5px; }
   font-size: 14px;
 }
 
+.footer-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 17px;
+}
+
+.footer-brand .brand-icon { width: 22px; height: 22px; }
+
+.footer-tagline {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
 .footer-links {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 6px 18px;
-  margin: 14px 0;
+  margin: 14px 0 6px;
   font-size: 13px;
 }
 

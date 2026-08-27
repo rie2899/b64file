@@ -110,6 +110,28 @@ describe('tool DOM interaction', () => {
     expect(localStorage.getItem('b64file-theme')).toBe('light');
   });
 
+  it('renders the about page with brand story and feedback email', () => {
+    document.body.dataset.page = 'about';
+    document.body.innerHTML = `<div id="app">${renderShell('about')}</div>`;
+    const html = document.body.innerHTML;
+    expect(html).toContain('关于 b64file');
+    expect(html).toContain('由爱而生');
+    expect(html).toContain('mailto:greedy2899@gmail.com');
+    expect(html).not.toContain('id="tool"');
+    expect(html).toContain('服务条款');
+  });
+
+  it('footer contains ICP placeholder support and copyright year', () => {
+    document.body.dataset.page = 'home';
+    document.body.innerHTML = `<div id="app">${renderShell('home')}</div>`;
+    const footer = document.querySelector('footer')?.innerHTML ?? '';
+    expect(footer).toContain('由爱而生');
+    expect(footer).toContain('greedy2899@gmail.com');
+    expect(footer).toContain(`© ${new Date().getFullYear()}`);
+    expect(footer).toContain('/about/');
+    expect(footer).toContain('/terms/');
+  });
+
   it('shows validation errors for invalid base64 without rendering a result', async () => {
     await import('../src/tool');
 

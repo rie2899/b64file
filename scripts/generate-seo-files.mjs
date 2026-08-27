@@ -1,7 +1,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const config = JSON.parse(readFileSync('site.config.json', 'utf8'));
-const pages = JSON.parse(readFileSync('page-registry.json', 'utf8'));
+const allPages = JSON.parse(readFileSync('page-registry.json', 'utf8'));
+const pages = allPages.filter((p) => !p.hide); // 404 等页面不进 sitemap
 const siteUrl = config.siteUrl.replace(/\/$/, '');
 
 writeFileSync(

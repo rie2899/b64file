@@ -1,5 +1,5 @@
 import pageRegistry from '../page-registry.json';
-import { DEFAULT_SITE_URL } from './site-config';
+import { DEFAULT_SITE_URL, FEEDBACK_EMAIL, ICP_NUMBER } from './site-config';
 
 export type PageId = string;
 export type ToolMode = 'to-file' | 'to-base64' | 'text';
@@ -331,6 +331,85 @@ const pageData: Record<PageId, PageContent> = {
       { q: '关闭页面后数据会保留吗？', a: '不会。所有处理都在内存中完成，关闭或刷新页面后即消失。' },
       { q: '怎么证明没有上传？', a: '打开浏览器开发者工具的 Network 面板再使用工具，可以看到除页面静态资源外没有任何数据请求。' }
     ]
+  },
+  about: {
+    title: '关于 b64file - 由爱而生的本地文件工具',
+    desc: 'b64file 是一个独立开发的免费 Base64 工具：本地处理、无广告、无账号。了解它为什么存在，以及背后的原则。',
+    h1: '关于 b64file',
+    answer:
+      'b64file 由爱而生——一个独立开发者因为一次真实的抓狂而建：接口返回的 JSON 里嵌着 PDF 的 Base64，市面上的工具要么报错，要么要求上传数据。',
+    mode: 'to-file',
+    sections: [
+      {
+        h2: '为什么做这个工具',
+        html: '<p>那天，一段接口返回的 JSON 里嵌着两份 PDF 的 Base64。粘贴到所有能找到的在线工具里，得到的都是"非法字符"报错——没人告诉我贴的是 JSON，更没人帮我把文件提取出来。手动写脚本？三分钟；找到顺手的工具？三十分钟没有结果。</p><p>于是有了 b64file：贴入任何东西——纯 Base64、Data URL、甚至复制不完整的 JSON——它先诊断，再修复，最后把文件还给你。</p>'
+      },
+      {
+        h2: '我们的原则',
+        html: `<ul>
+          <li><strong>数据不出浏览器</strong> — 没有上传接口，处理全程在你设备上完成</li>
+          <li><strong>没有广告</strong> — 不靠流量变现，页面干净是工具的一部分</li>
+          <li><strong>无需注册</strong> — 打开就用，用完即走</li>
+          <li><strong>免费</strong> — 核心功能永久免费</li>
+        </ul>`
+      },
+      {
+        h2: '技术实现',
+        html: '<p>纯静态页面 + 浏览器本地计算。文件类型通过魔数识别而非扩展名；Base64 容错遵循 RFC 4648；全部逻辑有 60+ 自动化测试覆盖。你也可以打开开发者工具的 Network 面板验证：没有任何数据请求。</p>'
+      },
+      {
+        h2: '反馈与建议',
+        html: `<p>发现 bug、缺格式、有好想法？邮件至 <a href="mailto:${FEEDBACK_EMAIL}">${FEEDBACK_EMAIL}</a>，每封都会读。</p>`
+      }
+    ],
+    faqs: [
+      { q: '这个工具会一直免费吗？', a: '核心转换功能会永久免费。如果未来加入批量、桌面版等进阶能力，页面会明确标注，不影响现有功能。' },
+      { q: '是谁在维护？', a: '一名独立开发者。没有团队、没有融资，一个人写代码、修 bug、回邮件。' },
+      { q: '接受功能建议吗？', a: '非常欢迎，邮件描述你的使用场景即可。' }
+    ]
+  },
+  terms: {
+    title: '服务条款 - b64file',
+    desc: 'b64file 服务条款：服务性质、本地处理边界、免责声明与使用规范。',
+    h1: '服务条款',
+    answer:
+      '使用 b64file 即表示你同意以下条款。工具按"现状"免费提供，所有转换在你的浏览器本地完成。',
+    mode: 'to-file',
+    sections: [
+      {
+        h2: '服务性质',
+        html: '<p>b64file 提供免费的在线 Base64 编解码与文件转换服务。页面为静态资源，转换逻辑在浏览器执行，我们不接收、不存储、不经手你的任何数据。</p>'
+      },
+      {
+        h2: '免责声明',
+        html: '<p>转换结果由算法自动生成，仅供辅助使用，不构成任何专业建议。对因使用本工具产生的直接或间接损失，本站不承担责任。重要文件操作前请自行备份。</p>'
+      },
+      {
+        h2: '使用规范',
+        html: '<p>禁止利用本工具处理违法内容、制作或传播恶意文件、侵犯他人知识产权。你对自己处理的内容负全部责任。</p>'
+      },
+      {
+        h2: '知识产权',
+        html: '<p>本站页面设计与代码版权归 b64file 所有。你在工具中处理的内容完全属于你，本站不主张任何权利。</p>'
+      },
+      {
+        h2: '条款变更',
+        html: `<p>条款可能随服务调整而更新，以页面最新版本为准。疑问请联系 <a href="mailto:${FEEDBACK_EMAIL}">${FEEDBACK_EMAIL}</a>。</p>`
+      }
+    ],
+    faqs: [
+      { q: '工具收费吗？', a: '核心功能免费，页面无广告，无付费墙。' },
+      { q: '你们能看到我的数据吗？', a: '不能。没有上传接口，服务器日志只有常规访问记录（IP、时间、URL）。' }
+    ]
+  },
+  '404': {
+    title: '页面不存在 - b64file',
+    desc: '你访问的页面不存在或已移动。',
+    h1: '页面不见了',
+    answer: '你访问的地址不存在或已移动。下面的入口可以继续使用工具。',
+    mode: 'to-file',
+    sections: [],
+    faqs: []
   }
 };
 
@@ -351,16 +430,19 @@ function absoluteUrl(path: string): string {
   return base ? `${base}${path}` : '';
 }
 
+const CONTENT_ONLY_PAGES = new Set(['privacy', 'about', 'terms', '404']);
+
 export function renderShell(currentPage: PageId): string {
-  const showTool = currentPage !== 'privacy';
+  const showTool = !CONTENT_ONLY_PAGES.has(currentPage);
+  const d = pageData[currentPage] ?? pageData.home;
   return `
     ${header()}
     <main>
       ${hero(currentPage)}
       ${showTool ? toolCard(currentPage) : ''}
       ${contentSections(currentPage)}
-      ${faqSection(currentPage)}
-      ${relatedLinks(currentPage)}
+      ${d.faqs.length ? faqSection(currentPage) : ''}
+      ${currentPage !== '404' ? relatedLinks(currentPage) : ''}
     </main>
     ${footer()}
   `;
@@ -370,7 +452,10 @@ function header(): string {
   return `
     <header class="site-header">
       <nav class="nav" aria-label="主导航">
-        <a class="brand" href="/"><span class="brand-mark">b64</span>file</a>
+        <a class="brand" href="/">
+          <svg class="brand-icon" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="bg-lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#bg-lg)"/><text x="32" y="41" text-anchor="middle" font-family="Consolas,monospace" font-size="21" font-weight="700" fill="#fff">b64</text></svg>
+          <span class="brand-word"><span class="brand-mark">b64</span>file</span>
+        </a>
         <div class="nav-links">
           <a href="/base64-to-file/">Base64 转文件</a>
           <a href="/json-to-file/">JSON 转文件</a>
@@ -468,8 +553,8 @@ function faqSection(page: PageId): string {
 }
 
 function relatedLinks(currentPage: PageId): string {
-  const items = pageRegistry
-    .filter((p) => p.id !== currentPage)
+  const items = (pageRegistry as Array<{ id: string; path: string; hide?: boolean }>)
+    .filter((p) => !p.hide && p.id !== currentPage)
     .map((p) => `<a href="${p.path}">${pageData[p.id]?.h1 ?? p.id}</a>`)
     .join('');
   return `
@@ -481,37 +566,51 @@ function relatedLinks(currentPage: PageId): string {
 }
 
 function footer(): string {
+  const year = new Date().getFullYear();
   return `
     <footer class="footer">
-      <p><strong>b64file</strong> — Base64 与文件互转工具。所有转换在浏览器本地完成，文件不上传服务器。</p>
+      <div class="footer-brand">
+        <svg class="brand-icon" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="bg-fg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#bg-fg)"/><text x="32" y="41" text-anchor="middle" font-family="Consolas,monospace" font-size="21" font-weight="700" fill="#fff">b64</text></svg>
+        <strong>b64file</strong>
+      </div>
+      <p class="footer-tagline">由爱而生 · 数据不出浏览器 · 免费无广告</p>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>
         <a href="/json-to-file/">JSON 转文件</a>
         <a href="/file-to-base64/">文件转 Base64</a>
         <a href="/base64-to-image/">Base64 转图片</a>
-        <a href="/image-to-base64/">图片转 Base64</a>
-        <a href="/base64-to-pdf/">Base64 转 PDF</a>
-        <a href="/pdf-to-base64/">PDF 转 Base64</a>
         <a href="/base64-decode-errors/">解码失败排查</a>
-        <a href="/privacy/">隐私政策</a>
       </div>
-      <p class="muted">© b64file.cn · Base64 是编码而非加密，请勿用于保护敏感数据</p>
+      <div class="footer-links">
+        <a href="/about/">关于</a>
+        <a href="/privacy/">隐私政策</a>
+        <a href="/terms/">服务条款</a>
+        <a href="mailto:${FEEDBACK_EMAIL}">反馈 ${FEEDBACK_EMAIL}</a>
+      </div>
+      <p class="muted">© ${year} b64file.cn · Base64 是编码而非加密，请勿用于保护敏感数据</p>
+      ${ICP_NUMBER ? `<p><a class="muted" href="https://beian.miit.gov.cn/" rel="noopener nofollow" target="_blank">${ICP_NUMBER}</a></p>` : ''}
     </footer>
   `;
 }
 
 export function metaTags(page: PageId): string {
   const d = pageData[page] ?? pageData.home;
-  return `<title>${d.title}</title>\n    <meta name="description" content="${d.desc}" />`;
+  return `<title>${d.title}</title>
+    <meta name="description" content="${d.desc}" />
+    <meta property="og:title" content="${d.title}" />
+    <meta property="og:description" content="${d.desc}" />
+    <meta property="og:type" content="website" />`;
 }
 
 export function canonicalTag(page: PageId): string {
+  if (page === '404') return '';
   const url = absoluteUrl(pagePaths[page] ?? '/');
   return url ? `<link rel="canonical" href="${url}" />` : '';
 }
 
 export function jsonLdScript(page: PageId): string {
+  if (page === '404') return '';
   return `<script type="application/ld+json">${JSON.stringify(jsonLd(page))}</script>`;
 }
 
