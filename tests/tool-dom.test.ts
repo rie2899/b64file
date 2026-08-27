@@ -90,6 +90,26 @@ describe('tool DOM interaction', () => {
     expect((result?.querySelector('#b64-out') as HTMLTextAreaElement)?.value.length).toBeGreaterThan(20);
   });
 
+  it('toggles the theme and persists the choice', async () => {
+    localStorage.clear();
+    document.documentElement.dataset.theme = 'light';
+    const { initTheme } = await import('../src/theme');
+    initTheme();
+
+    const btn = document.querySelector<HTMLButtonElement>('#theme-toggle');
+    expect(btn).toBeTruthy();
+    expect(btn!.textContent).toBe('🌙');
+
+    btn!.click();
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(localStorage.getItem('b64file-theme')).toBe('dark');
+    expect(btn!.textContent).toBe('☀️');
+
+    btn!.click();
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(localStorage.getItem('b64file-theme')).toBe('light');
+  });
+
   it('shows validation errors for invalid base64 without rendering a result', async () => {
     await import('../src/tool');
 

@@ -1,6 +1,7 @@
 import './styles.css';
 import { renderShell, type PageId } from './static-pages';
 import { initTool } from './tool';
+import { initTheme } from './theme';
 import { BAIDU_TONGJI_ID } from './site-config';
 
 const page = (document.body.dataset.page ?? 'home') as PageId;
@@ -10,6 +11,7 @@ if (app && !app.innerHTML.trim()) {
   app.innerHTML = renderShell(page);
 }
 
+initTheme();
 initTool();
 
 // Baidu Tongji — only loads when an ID is configured in site.config.json

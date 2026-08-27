@@ -1,0 +1,40 @@
+const STORAGE_KEY = 'b64file-theme';
+
+/**
+ * Manual light/dark theme with persistence. The initial theme is resolved
+ * by the inline head script (before first paint) using the stored choice or
+ * the system preference; this module only wires the toggle button.
+ */
+export function initTheme(): void {
+  const root = document.documentElement;
+  if (!root.dataset.theme) {
+    root.dataset.theme = prefersDark() ? 'dark' : 'light';
+  }
+
+  const btn = document.querySelector<HTMLButtonElement>('#theme-toggle');
+  if (!btn) return;
+
+  const updateIcon = () => {
+    const dark = root.dataset.theme === 'dark';
+    btn.textContent = dark ? '☀️' : '🌙';
+    btn.setAttribute('aria-label', dark ? '切换到浅色模式' : '切换到深色模式');
+    btn.title = dark ? '切换到浅色模式' : '切换到深色模式';
+  };
+
+  btn.addEventListener('click', () => {
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      // storage unavailable (private mode) — theme still applies for this session
+    }
+    updateIcon();
+  });
+
+  updateIcon();
+}
+
+function prefersDark(): boolean {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
+}

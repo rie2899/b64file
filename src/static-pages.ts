@@ -378,7 +378,10 @@ function header(): string {
           <a href="/base64-to-image/">Base64 转图片</a>
           <a href="/base64-decode-errors/">解码失败排查</a>
         </div>
-        <span class="local-chip" title="所有转换在浏览器本地完成">🔒 本地处理</span>
+        <div class="nav-side">
+          <span class="local-chip" title="所有转换在浏览器本地完成">🔒 本地处理</span>
+          <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换深浅主题">🌙</button>
+        </div>
       </nav>
     </header>
   `;
