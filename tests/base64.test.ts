@@ -92,7 +92,7 @@ describe('normalizeBase64Input', () => {
   it('adds missing padding', () => {
     const r = normalizeBase64Input('Zm9vYg');
     expect(r.normalized).toBe('Zm9vYg==');
-    expect(r.transformations.join()).toContain('补齐');
+    expect(r.transformations.join()).toContain('补上');
   });
 
   it('fixes excessive padding', () => {
@@ -152,13 +152,13 @@ describe('validateBase64', () => {
   it('rejects characters after padding', () => {
     const r = validateBase64('QQ==QQ');
     expect(r.valid).toBe(false);
-    expect(r.errors.join()).toContain('之后');
+    expect(r.errors.join()).toContain('后面');
   });
 
   it('rejects more than two padding characters', () => {
     const r = validateBase64('QQ===');
     expect(r.valid).toBe(false);
-    expect(r.errors.join()).toContain('超过');
+    expect(r.errors.join()).toContain('用多了');
   });
 });
 

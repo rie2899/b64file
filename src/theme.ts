@@ -17,8 +17,8 @@ export function initTheme(): void {
   const updateIcon = () => {
     const dark = root.dataset.theme === 'dark';
     btn.textContent = dark ? '☀️' : '🌙';
-    btn.setAttribute('aria-label', dark ? '切换到浅色模式' : '切换到深色模式');
-    btn.title = dark ? '切换到浅色模式' : '切换到深色模式';
+    btn.setAttribute('aria-label', dark ? '切到浅色模式' : '切到深色模式');
+    btn.title = dark ? '切到浅色模式' : '切到深色模式';
   };
 
   btn.addEventListener('click', () => {

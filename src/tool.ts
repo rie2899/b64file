@@ -100,7 +100,7 @@ function initToFile(tool: HTMLElement): void {
     }
     if (raw.length > MAX_INPUT_CHARS) {
       diagnosis.hidden = false;
-      diagnosis.innerHTML = `<ul class="diag-list"><li class="err">✕ 输入超过 ${Math.floor(MAX_INPUT_CHARS / 1_000_000)} M 字符上限，请拆分处理</li></ul>`;
+      diagnosis.innerHTML = `<ul class="diag-list"><li class="err">✕ 输入超过 ${Math.floor(MAX_INPUT_CHARS / 1_000_000)}M 字符上限了，太大一口吃不下，麻烦拆成几段再试试</li></ul>`;
       result.hidden = true;
       return;
     }
@@ -127,8 +127,8 @@ function initToFile(tool: HTMLElement): void {
       if (recovered && recovered.length > 0) {
         diagnosis.hidden = false;
         diagnosis.innerHTML = `<ul class="diag-list">
-          <li class="ok">✓ 检测到疑似接口数据（复制不完整），已恢复提取 ${recovered.length} 个 Base64 文件</li>
-          <li class="info">ℹ 建议重新完整复制接口返回以获得原始文件名</li>
+          <li class="ok">✓ 检测到疑似接口数据（复制得不太完整），照样恢复提取出了 ${recovered.length} 个 Base64 文件</li>
+          <li class="info">ℹ 想要原始文件名的话，建议把接口返回的内容完整复制一遍</li>
         </ul>`;
         renderJsonFilesResult(result, recovered);
         result.hidden = false;
@@ -152,7 +152,7 @@ function initToFile(tool: HTMLElement): void {
       result.hidden = false;
     } catch {
       diagnosis.innerHTML +=
-        '<ul class="diag-list"><li class="err">✕ 解码失败：内容可能不完整，请重新复制完整数据</li></ul>';
+        '<ul class="diag-list"><li class="err">✕ 解码失败，内容看着不完整——回去重新复制一份完整的数据再来试试</li></ul>';
       result.hidden = true;
     }
   };
@@ -194,7 +194,7 @@ function renderDiagnosis(el: HTMLElement, n: NormalizeResult, v: ValidationResul
 function renderFileResult(el: HTMLElement, bytes: Uint8Array, mimeHint: string | null): void {
   const type = detectFileType(bytes);
   const category: FileCategory | 'unknown' = type?.category ?? 'unknown';
-  const label = type?.label ?? (mimeHint ? `未知类型（MIME 提示：${mimeHint}）` : '未知二进制文件');
+  const label = type?.label ?? (mimeHint ? `认不出具体类型（MIME 提示：${mimeHint}）` : '认不出的二进制文件');
   const mime = type?.mime ?? mimeHint ?? 'application/octet-stream';
   const ext = type?.extension ?? mimeHint?.split('/')[1]?.replace(/[^a-z0-9]/gi, '') ?? 'bin';
   const icon = CATEGORY_ICONS[category] ?? CATEGORY_ICONS.unknown;
@@ -251,7 +251,7 @@ function renderJsonFilesResult(el: HTMLElement, files: ExtractedB64File[]): void
             <div class="file-icon">${icon}</div>
             <div class="file-meta">
               <strong>${escapeHtml(file.label)}</strong>
-              <span>${escapeHtml(type?.label ?? '未知类型')} · ${escapeHtml(mime)} · ${formatBytes(bytes.length)}</span>
+              <span>${escapeHtml(type?.label ?? '没认出来')} · ${escapeHtml(mime)} · ${formatBytes(bytes.length)}</span>
             </div>
             <div class="file-actions">
               <label class="filename-label">文件名
@@ -261,7 +261,7 @@ function renderJsonFilesResult(el: HTMLElement, files: ExtractedB64File[]): void
             </div>
           </div>`;
       } catch {
-        return `<div class="file-card" data-file-index="${index}"><div class="file-meta"><strong>${escapeHtml(file.label)}</strong><span class="err-inline">✕ 解码失败</span></div></div>`;
+        return `<div class="file-card" data-file-index="${index}"><div class="file-meta"><strong>${escapeHtml(file.label)}</strong><span class="err-inline">✕ 没解出来，看看下面的诊断提示</span></div></div>`;
       }
     })
     .join('');
@@ -313,12 +313,12 @@ function initToBase64(tool: HTMLElement): (file: File) => Promise<void> | void {
     if (file.size > MAX_FILE_BYTES) {
       reset();
       info.hidden = false;
-      info.innerHTML = '<p class="err-inline">✕ 文件超过 100 MB 上限</p>';
+      info.innerHTML = '<p class="err-inline">✕ 文件超过 100 MB 上限了，换个小一点的再试试</p>';
       return;
     }
     if (file.size > BIG_FILE_BYTES) {
       const proceed = window.confirm(
-        `文件 ${formatBytes(file.size)} 较大，转换会占用较多浏览器内存，继续吗？`
+        `这个文件有 ${formatBytes(file.size)}，转换起来挺吃浏览器内存的，确定要继续吗？`
       );
       if (!proceed) return;
     }
@@ -390,7 +390,7 @@ function renderEncodeResult(el: HTMLElement, out: string): void {
       ${
         canShow
           ? `<textarea readonly class="mono-out" id="b64-out">${escapeHtml(out)}</textarea>`
-          : `<p class="muted">结果共 ${out.length.toLocaleString('zh-CN')} 字符，过大不展示全文，可直接复制或下载。</p>`
+          : `<p class="muted">结果一共 ${out.length.toLocaleString('zh-CN')} 个字符，太长就不全展示了，直接复制或者下载就行。</p>`
       }
       <div class="btn-row">
         <button class="btn" id="copy-btn" type="button">复制结果</button>

@@ -31,12 +31,12 @@ export function normalizeBase64Input(raw: string): NormalizeResult {
 
   // BOM from editors like Notepad breaks decode at position 0
   if (input.charCodeAt(0) === 0xfeff) {
-    transformations.push('已移除 BOM 头 / removed byte-order mark');
+    transformations.push('去掉了开头的 BOM 头 / removed byte-order mark');
     input = input.slice(1);
   }
 
   if (input.trim().length !== input.length) {
-    transformations.push('已移除首尾空白 / trimmed surrounding whitespace');
+    transformations.push('掐掉了首尾多余的空白 / trimmed surrounding whitespace');
     input = input.trim();
   }
 
@@ -45,22 +45,22 @@ export function normalizeBase64Input(raw: string): NormalizeResult {
     detectedMimeType = dataUrl[1] || null;
     if (!dataUrl[2].includes('base64')) {
       warnings.push(
-        'Data URL 未标记 ;base64，标准 Data URL 此处应为百分号编码；已尝试按 Base64 继续解析 / Data URL is not marked ;base64, attempting Base64 decode anyway'
+        '这个 Data URL 没标 ;base64——按规范这里应该是百分号编码，不过还是先尝试按 Base64 帮你解析一下 / Data URL is not marked ;base64, attempting Base64 decode anyway'
       );
     } else {
-      transformations.push('已移除 Data URL 前缀 / removed data-URL prefix');
+      transformations.push('摘掉了 Data URL 前缀 / removed data-URL prefix');
     }
     input = input.slice(dataUrl[0].length);
   }
 
   if (/\s/.test(input)) {
-    transformations.push('已移除换行与空格 / removed line breaks and spaces');
+    transformations.push('清理掉了换行和空格 / removed line breaks and spaces');
     input = input.replace(/\s+/g, '');
   }
 
   if (input.includes('-') || input.includes('_')) {
     transformations.push(
-      '已将 Base64URL 字符 (- _) 转为标准字母表 / converted Base64URL to standard alphabet'
+      '把 Base64URL 的 - _ 换成了标准字母表 / converted Base64URL to standard alphabet'
     );
     input = input.replace(/-/g, '+').replace(/_/g, '/');
   }
@@ -76,10 +76,10 @@ export function normalizeBase64Input(raw: string): NormalizeResult {
   } else {
     if (expectedPad > originalPadCount) {
       transformations.push(
-        `已补齐 ${expectedPad} 个填充符 / added ${expectedPad} padding character(s)`
+        `帮你补上了 ${expectedPad} 个填充符 / added ${expectedPad} padding character(s)`
       );
     } else if (originalPadCount > expectedPad) {
-      transformations.push('已修正多余的填充符 / fixed excessive padding');
+      transformations.push('顺手修正了多余的填充符 / fixed excessive padding');
     }
     input = core + '='.repeat(expectedPad);
   }
@@ -97,7 +97,7 @@ export function validateBase64(b64: string): ValidationResult {
   const invalidPositions: number[] = [];
 
   if (!b64 || b64.length === 0) {
-    return { valid: false, errors: ['输入为空 / input is empty'], invalidPositions: [], estimatedBytes: 0 };
+    return { valid: false, errors: ['还没输入内容呢 / input is empty'], invalidPositions: [], estimatedBytes: 0 };
   }
 
   let firstPad = -1;
@@ -121,7 +121,7 @@ export function validateBase64(b64: string): ValidationResult {
   if (invalidPositions.length > 0) {
     const preview = invalidPositions.slice(0, 5).join(', ');
     errors.push(
-      `发现 ${invalidPositions.length} 个非法字符（位置 ${preview}${invalidPositions.length > 5 ? ' …' : ''}）/ invalid character(s) found`
+      `发现 ${invalidPositions.length} 个非法字符，就在第 ${preview}${invalidPositions.length > 5 ? ' …' : ''} 位 / invalid character(s) found`
     );
   }
 
@@ -129,15 +129,15 @@ export function validateBase64(b64: string): ValidationResult {
     const trailing = b64.length - firstPad;
     const rest = b64.slice(firstPad).replace(/=/g, '');
     if (rest.length > 0) {
-      errors.push('填充符 = 之后还有其他字符 / characters found after padding');
+      errors.push('填充符 = 后面居然还有别的字符 / characters found after padding');
     } else if (trailing > 2) {
-      errors.push('填充符超过 2 个 / more than 2 padding characters');
+      errors.push('填充符用多了，最多只能有 2 个 / more than 2 padding characters');
     }
   }
 
   const coreLen = b64.replace(/=+$/, '').length;
   if (coreLen % 4 === 1) {
-    errors.push('长度 % 4 余 1：数据疑似被截断 / length remainder is 1, data looks truncated');
+    errors.push('长度对 4 取余是 1，这数据八成被截断了 / length remainder is 1, data looks truncated');
   }
 
   const estimatedBytes = Math.floor((coreLen * 3) / 4);
