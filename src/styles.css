@@ -776,3 +776,6 @@ details[open] p { animation: fadeIn 0.25s ease both; }
 }
 
 .hero-tight { padding-bottom: 14px; }
+
+/* diagnosis error-context snippet: never let a long base64 run blow out the panel */
+.diag-ctx { word-break: break-all; }

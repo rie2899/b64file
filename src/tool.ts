@@ -11,10 +11,12 @@ import {
 import { detectFileType, type FileCategory } from './lib/filetype';
 import { extractBase64FilesFromJson, extractBase64FromJsonFragment, type ExtractedB64File } from './lib/json-extract';
 import { trackEvent } from './lib/analytics';
+import { decodeBase64InWorker, encodeBytesInWorker } from './lib/b64-worker';
 
 const MAX_INPUT_CHARS = 200_000_000; // ~150 MB decoded
 const MAX_FILE_BYTES = 100 * 1024 * 1024;
 const BIG_FILE_BYTES = 20 * 1024 * 1024;
+const WORKER_DECODE_CHARS = 20_000_000; // ~15 MB decoded — below this the main thread is instant
 const SHOW_OUTPUT_LIMIT = 10_000;
 
 const CATEGORY_ICONS: Record<FileCategory | 'unknown', string> = {
@@ -63,6 +65,7 @@ function initTabs(tool: HTMLElement): (mode: string) => void {
       const active = t.dataset.mode === mode;
       t.classList.toggle('active', active);
       t.setAttribute('aria-selected', active ? 'true' : 'false');
+      t.tabIndex = active ? 0 : -1;
     });
     panels.forEach((p) => {
       p.hidden = p.dataset.panel !== mode;
@@ -72,6 +75,18 @@ function initTabs(tool: HTMLElement): (mode: string) => void {
     t.addEventListener('click', () => {
       activate(t.dataset.mode ?? 'to-file');
       trackEvent('tool', 'mode_switch', t.dataset.mode ?? '');
+    })
+  );
+  // WAI-ARIA tablist: arrow keys move focus and selection together
+  tabs.forEach((t, i) =>
+    t.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      const dir = e.key === 'ArrowRight' ? 1 : -1;
+      const next = tabs[(i + dir + tabs.length) % tabs.length];
+      next.focus();
+      activate(next.dataset.mode ?? 'to-file');
+      trackEvent('tool', 'mode_switch', next.dataset.mode ?? '');
     })
   );
   activate(tool.dataset.defaultMode ?? 'to-file');
@@ -90,8 +105,14 @@ function initToFile(tool: HTMLElement): void {
   const fileInput = tool.querySelector<HTMLInputElement>('#b64-file-input');
   const clearBtn = tool.querySelector<HTMLButtonElement>('#b64-clear');
   let timer: number | undefined;
+  let runToken = 0;
 
   const run = () => {
+    const token = ++runToken;
+    void runOnce(token);
+  };
+
+  const runOnce = async (token: number) => {
     const raw = input.value;
     if (!raw.trim()) {
       diagnosis.hidden = true;
@@ -147,10 +168,19 @@ function initToFile(tool: HTMLElement): void {
     }
 
     try {
-      const bytes = decodeBase64ToBytes(n.normalized);
+      let bytes: Uint8Array;
+      if (n.normalized.length > WORKER_DECODE_CHARS) {
+        diagnosis.innerHTML +=
+          '<ul class="diag-list"><li class="info">ℹ 数据不小，正在后台线程解码，页面不会卡，稍等</li></ul>';
+        bytes = await decodeBase64InWorker(n.normalized);
+      } else {
+        bytes = decodeBase64ToBytes(n.normalized);
+      }
+      if (token !== runToken) return;
       renderFileResult(result, bytes, n.detectedMimeType);
       result.hidden = false;
     } catch {
+      if (token !== runToken) return;
       diagnosis.innerHTML +=
         '<ul class="diag-list"><li class="err">✕ 解码失败，内容看着不完整——回去重新复制一份完整的数据再来试试</li></ul>';
       result.hidden = true;
@@ -185,6 +215,17 @@ function renderDiagnosis(el: HTMLElement, n: NormalizeResult, v: ValidationResul
     items.push('<li class="ok">✓ 格式很干净，没动任何东西</li>');
   }
   v.errors.forEach((e) => items.push(`<li class="err">✕ ${escapeHtml(e)}</li>`));
+  if (v.invalidPositions.length > 0) {
+    const pos = v.invalidPositions[0];
+    const bad = n.normalized[pos] ?? '?';
+    const before = n.normalized.slice(Math.max(0, pos - 12), pos);
+    const after = n.normalized.slice(pos + 1, pos + 13);
+    items.push(
+      `<li class="err">↳ 第 ${pos} 位是「${escapeHtml(bad)}」，前后长这样：<code class="diag-ctx">${escapeHtml(
+        before
+      )}<strong>${escapeHtml(bad)}</strong>${escapeHtml(after)}</code></li>`
+    );
+  }
   if (v.valid) {
     items.push(`<li class="info">ℹ 解码后约 ${formatBytes(v.estimatedBytes)}</li>`);
   }
@@ -336,21 +377,27 @@ function initToBase64(tool: HTMLElement): (file: File) => Promise<void> | void {
         </div>
       </div>`;
     options.hidden = false;
-    encode();
+    void encode();
   };
 
-  const encode = () => {
+  const encode = async () => {
     if (!currentBytes || !currentFile) return;
     const urlSafe = (tool.querySelector('#opt-urlsafe') as HTMLInputElement)?.checked ?? false;
     const withDataUrl = (tool.querySelector('#opt-dataurl') as HTMLInputElement)?.checked ?? false;
-    let out = encodeBytesToBase64(currentBytes, { urlSafe });
     const mime = currentFile.type || 'application/octet-stream';
+    if (currentBytes.length > BIG_FILE_BYTES) {
+      resultEl.hidden = false;
+      resultEl.innerHTML = `<p class="muted">正在编码 ${formatBytes(
+        currentBytes.length
+      )}——挪到后台线程跑了，页面不卡，跑完自动出结果</p>`;
+    }
+    let out = await encodeBytesInWorker(currentBytes, urlSafe);
     if (withDataUrl) out = `data:${mime};base64,${out}`;
     renderEncodeResult(resultEl, out);
     resultEl.hidden = false;
   };
 
-  options.querySelectorAll('input').forEach((i) => i.addEventListener('change', encode));
+  options.querySelectorAll('input').forEach((i) => i.addEventListener('change', () => void encode()));
 
   ['dragover', 'dragenter'].forEach((evt) =>
     dropZone.addEventListener(evt, (e) => {

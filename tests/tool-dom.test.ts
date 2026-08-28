@@ -187,4 +187,62 @@ describe('tool DOM interaction', () => {
     expect(panel?.hidden).toBe(false);
     expect(panel?.querySelector('#drop-zone')).toBeTruthy();
   });
+
+  it('moves between tabs with arrow keys (WAI-ARIA tablist)', async () => {
+    await import('../src/tool');
+
+    const tool = document.querySelector<HTMLElement>('#tool');
+    const tabs = Array.from(tool?.querySelectorAll<HTMLButtonElement>('.mode-tab') ?? []);
+    expect(tabs.length).toBe(3);
+
+    const first = tabs.find((t) => t.dataset.mode === 'to-file')!;
+    expect(first.tabIndex).toBe(0);
+    expect(tabs.find((t) => t.dataset.mode === 'text')!.tabIndex).toBe(-1);
+
+    first.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    const second = tabs.find((t) => t.dataset.mode === 'to-base64')!;
+    expect(second.classList.contains('active')).toBe(true);
+    expect(second.getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(second);
+
+    second.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    expect(first.classList.contains('active')).toBe(true);
+    expect(document.activeElement).toBe(first);
+  });
+
+  it('keeps theme-color meta in sync with the manual theme toggle', async () => {
+    localStorage.clear();
+    document.head.innerHTML = '<meta name="theme-color" content="#faf9f5" />';
+    document.documentElement.dataset.theme = 'light';
+    const { initTheme } = await import('../src/theme');
+    initTheme();
+
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    expect(meta?.getAttribute('content')).toBe('#faf9f5');
+
+    document.querySelector<HTMLButtonElement>('#theme-toggle')!.click();
+    expect(meta?.getAttribute('content')).toBe('#1f1e1d');
+
+    document.querySelector<HTMLButtonElement>('#theme-toggle')!.click();
+    expect(meta?.getAttribute('content')).toBe('#faf9f5');
+  });
+
+  it('shows the offending character with surrounding context on invalid input', async () => {
+    await import('../src/tool');
+
+    const input = document.querySelector<HTMLTextAreaElement>('#b64-input');
+    input!.value = 'Zm9vYmFy$$x';
+    input!.dispatchEvent(new Event('input', { bubbles: true }));
+
+    await new Promise((r) => setTimeout(r, 400));
+
+    const diagnosis = document.querySelector<HTMLElement>('#b64-diagnosis');
+    expect(diagnosis?.hidden).toBe(false);
+    expect(diagnosis?.textContent).toContain('非法字符');
+    expect(diagnosis?.textContent).toContain('位是「$」');
+    expect(diagnosis?.textContent).toContain('前后长这样');
+    const ctx = diagnosis?.querySelector('.diag-ctx');
+    expect(ctx?.textContent).toContain('Zm9vYmFy');
+    expect(ctx?.querySelector('strong')?.textContent).toBe('$');
+  });
 });
