@@ -16,17 +16,25 @@
 
 ```bash
 pnpm build
-scp -r dist/* user@server:/var/www/b64file/
+scp -r dist/* root@服务器IP:/data/b64file/html/
 ```
 
-### 3. Nginx
+### 3. Nginx（Docker）
 
-参考 `nginx.conf.example`，要点：
+首次在服务器建目录并传配置：
 
-- `root /var/www/b64file`
-- `error_page 404 /404.html`
-- HTML 不缓存，`/assets/` 长缓存（文件名带 hash）
-- HTTPS 用腾讯云免费证书
+```bash
+ssh root@服务器IP "mkdir -p /data/b64file/html /data/b64file/certs"
+scp deploy/docker-compose.yml deploy/nginx.conf root@服务器IP:/data/b64file/
+```
+
+证书下来后（见第 4 步）下载 nginx 格式放 `/data/b64file/certs/b64file.cn.pem` 和 `.key`，然后：
+
+```bash
+cd /data/b64file && docker compose up -d
+```
+
+配置要点已写进 `deploy/nginx.conf`：http 和 www 301 到 https 主域、`error_page 404 /404.html`、HTML 不缓存、`/assets/` 长缓存。宿主机直装 nginx 的旧方案保留在 `nginx.conf.example` 备查。
 
 ### 4. 证书
 
