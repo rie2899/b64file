@@ -48,9 +48,9 @@ const pageData: Record<PageId, PageContent> = {
       {
         h2: '为什么死磕本地处理',
         html: `<div class="grid-3">
-          <div class="mini-card"><strong>没有上传接口</strong><p>不是"我们承诺不看你数据"，是技术上做不到——服务器只有静态页面，连接收文件的接口都不存在。</p></div>
-          <div class="mini-card"><strong>粘贴的瞬间出结果</strong><p>不经网络往返，处理就在你设备上。你可以打开开发者工具的 Network 面板自己验证。</p></div>
-          <div class="mini-card"><strong>认文件靠文件头</strong><p>不靠扩展名：%PDF 开头就是 PDF，改成 .exe 也骗不过它。20 多种格式开箱即认。</p></div>
+          <div class="mini-card"><div class="mc-bar">no_upload</div><strong>没有上传接口</strong><p>不是"我们承诺不看你数据"，是技术上做不到——服务器只有静态页面，连接收文件的接口都不存在。</p></div>
+          <div class="mini-card"><div class="mc-bar">instant</div><strong>粘贴的瞬间出结果</strong><p>不经网络往返，处理就在你设备上。你可以打开开发者工具的 Network 面板自己验证。</p></div>
+          <div class="mini-card"><div class="mc-bar">magic_bytes</div><strong>认文件靠文件头</strong><p>不靠扩展名：%PDF 开头就是 PDF，改成 .exe 也骗不过它。20 多种格式开箱即认。</p></div>
         </div>`
       }
     ],
@@ -475,8 +475,8 @@ function header(): string {
 function hero(page: PageId): string {
   const d = pageData[page] ?? pageData.home;
   return `
-    <section class="hero">
-      <p class="hero-prompt" aria-hidden="true"><span class="prompt-sign">~/b64 $</span> paste --anything<span class="hero-cursor"></span></p>
+    <section class="hero hero-tight">
+      <p class="hero-prompt" aria-hidden="true"><span class="prompt-sign">❯</span> paste --anything<span class="hero-cursor"></span><span class="prompt-comment"># 没有上传接口</span></p>
       <h1>${d.h1}</h1>
       <p class="answer">${d.answer}</p>
     </section>
@@ -487,6 +487,7 @@ function toolCard(page: PageId): string {
   const d = pageData[page] ?? pageData.home;
   return `
     <section class="tool-card" id="tool" data-default-mode="${d.mode}">
+      <div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="term-title">b64file — converter · local</span></div>
       <div class="mode-tabs" role="tablist" aria-label="转换模式">
         <button class="mode-tab" data-mode="to-file" role="tab" type="button">Base64 转文件</button>
         <button class="mode-tab" data-mode="to-base64" role="tab" type="button">文件转 Base64</button>
@@ -539,7 +540,7 @@ function contentSections(page: PageId): string {
   const d = pageData[page] ?? pageData.home;
   if (!d.sections.length) return '';
   return d.sections
-    .map((s, i) => `<section class="section"><span class="section-no">${String(i + 1).padStart(2, '0')}</span><h2>${s.h2}</h2>${s.html}</section>`)
+    .map((s, i) => `<section class="section"><span class="section-no">[${String(i + 1).padStart(2, '0')}]</span><h2>${s.h2}</h2>${s.html}</section>`)
     .join('\n');
 }
 
@@ -575,7 +576,7 @@ function footer(): string {
         <strong>b64file</strong>
       </div>
       <p class="footer-tagline">由爱而生 · 数据不出浏览器 · 免费无广告</p>
-      <p class="footer-status">engine rfc4648 · 67 tests · 0 cookies · 0 trackers</p>
+      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">local · rfc4648 · 67 tests · 0 trackers</span></div>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>

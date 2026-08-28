@@ -188,7 +188,7 @@ function renderDiagnosis(el: HTMLElement, n: NormalizeResult, v: ValidationResul
   if (v.valid) {
     items.push(`<li class="info">ℹ 解码后约 ${formatBytes(v.estimatedBytes)}</li>`);
   }
-  el.innerHTML = `<p class="diag-cmd">~/b64 $ diagnose</p><ul class="diag-list">${items.join('')}</ul>`;
+  el.innerHTML = `<div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="term-title">diagnose</span></div><p class="diag-cmd">❯ diagnose --input</p><ul class="diag-list">${items.join('')}</ul>`;
 }
 
 function renderFileResult(el: HTMLElement, bytes: Uint8Array, mimeHint: string | null): void {
