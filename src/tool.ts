@@ -171,7 +171,7 @@ function initToFile(tool: HTMLElement): void {
       let bytes: Uint8Array;
       if (n.normalized.length > WORKER_DECODE_CHARS) {
         diagnosis.innerHTML +=
-          '<ul class="diag-list"><li class="info">ℹ 数据不小，正在后台线程解码，页面不会卡，稍等</li></ul>';
+          '<ul class="diag-list"><li class="info">ℹ 数据不小，正在后台线程解码，页面不会卡，稍等 <span class="pixel-loader" aria-hidden="true"></span></li></ul>';
         bytes = await decodeBase64InWorker(n.normalized);
       } else {
         bytes = decodeBase64ToBytes(n.normalized);
@@ -229,6 +229,7 @@ function renderDiagnosis(el: HTMLElement, n: NormalizeResult, v: ValidationResul
   if (v.valid) {
     items.push(`<li class="info">ℹ 解码后约 ${formatBytes(v.estimatedBytes)}</li>`);
   }
+  el.classList.toggle('has-errors', v.errors.length > 0);
   el.innerHTML = `<div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="term-title">diagnose</span></div><p class="diag-cmd">❯ diagnose --input</p><ul class="diag-list">${items.join('')}</ul>`;
 }
 
@@ -389,7 +390,7 @@ function initToBase64(tool: HTMLElement): (file: File) => Promise<void> | void {
       resultEl.hidden = false;
       resultEl.innerHTML = `<p class="muted">正在编码 ${formatBytes(
         currentBytes.length
-      )}——挪到后台线程跑了，页面不卡，跑完自动出结果</p>`;
+      )}——挪到后台线程跑了，页面不卡，跑完自动出结果 <span class="pixel-loader" aria-hidden="true"></span></p>`;
     }
     let out = await encodeBytesInWorker(currentBytes, urlSafe);
     if (withDataUrl) out = `data:${mime};base64,${out}`;

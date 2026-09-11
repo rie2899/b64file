@@ -779,3 +779,80 @@ details[open] p { animation: fadeIn 0.25s ease both; }
 
 /* diagnosis error-context snippet: never let a long base64 run blow out the panel */
 .diag-ctx { word-break: break-all; }
+
+/* ---------- interaction feedback: mechanical, steps(), terminal-grade ---------- */
+
+/* keyboard focus: hard accent ring, never removed */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* tab panel switch: chunky slide-in */
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+.mode-panel:not([hidden]) { animation: panelIn 0.16s steps(3) both; }
+
+/* terminal lines print instead of float */
+.diag-list li { animation-timing-function: steps(2); }
+
+/* results land like a dropped brick */
+.file-card { animation-timing-function: steps(3); }
+
+/* drop zone: pulsing target while dragging */
+.drop-zone.drag { animation: dragPulse 0.9s steps(2) infinite; }
+@keyframes dragPulse {
+  50% { background: var(--accent-soft); border-color: var(--accent); }
+}
+.drop-zone.drag .drop-icon { animation: dragBob 0.45s steps(2) infinite alternate; }
+@keyframes dragBob {
+  from { transform: translateY(0); }
+  to { transform: translateY(-5px); }
+}
+
+/* invalid input: the whole panel flinches */
+.diagnosis.has-errors { animation: flinch 0.12s steps(2) 2; }
+@keyframes flinch {
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+.diagnosis.has-errors .term-bar .dot:first-child { background: var(--danger); }
+
+/* indeterminate pixel loader for worker jobs */
+.pixel-loader {
+  display: inline-block;
+  width: 110px;
+  height: 12px;
+  margin-left: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  vertical-align: middle;
+}
+.pixel-loader::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 22px;
+  background: var(--accent);
+  animation: loaderSlide 1.1s steps(10) infinite;
+}
+@keyframes loaderSlide {
+  from { left: -22px; }
+  to { left: 110px; }
+}
+
+/* copy ack: stamps in */
+.copy-feedback:not([hidden]) { animation: popIn 0.18s steps(2) both; }
+
+/* tmux activity cursor in the status bar */
+.statusbar .sb-left::after {
+  content: '▊';
+  margin-left: 7px;
+  opacity: 0.85;
+  animation: blink 1.1s steps(1) infinite;
+}
+
+/* FAQ arrow pivots mechanically */
+summary::after { transition: transform 0.12s steps(2); }
