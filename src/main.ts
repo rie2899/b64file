@@ -14,8 +14,17 @@ if (app && !app.innerHTML.trim()) {
 initTheme();
 initTool();
 
-// Baidu Tongji — only loads when an ID is configured in site.config.json
-if (BAIDU_TONGJI_ID && import.meta.env.MODE !== 'test' && typeof document !== 'undefined') {
+// Baidu Tongji — only loads when an ID is configured AND the page runs on the
+// production host, so local dev/preview traffic never pollutes the stats.
+const isLocalHost = /^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(
+  window.location.hostname
+);
+if (
+  BAIDU_TONGJI_ID &&
+  import.meta.env.MODE !== 'test' &&
+  typeof document !== 'undefined' &&
+  !isLocalHost
+) {
   window._hmt = window._hmt || [];
   const script = document.createElement('script');
   script.async = true;
