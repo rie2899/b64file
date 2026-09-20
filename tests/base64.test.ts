@@ -183,6 +183,18 @@ describe('detectFileType', () => {
     expect(detectFileType(bytes)?.extension).toBe('zip');
   });
 
+  it('detects docx inside a ZIP container', () => {
+    const head = [0x50, 0x4b, 0x03, 0x04, 20, 0, 0, 0];
+    const wordDir = Array.from('word/', (c) => c.charCodeAt(0));
+    expect(detectFileType(new Uint8Array([...head, ...wordDir]))?.extension).toBe('docx');
+  });
+
+  it('detects xlsx inside a ZIP container', () => {
+    const head = [0x50, 0x4b, 0x03, 0x04, 20, 0, 0, 0];
+    const xlDir = Array.from('xl/', (c) => c.charCodeAt(0));
+    expect(detectFileType(new Uint8Array([...head, ...xlDir]))?.extension).toBe('xlsx');
+  });
+
   it('detects GZIP', () => {
     expect(detectFileType(new Uint8Array([0x1f, 0x8b, 0x08, 0]))?.extension).toBe('gz');
   });

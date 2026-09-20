@@ -64,8 +64,31 @@ export function detectFileType(bytes: Uint8Array): DetectedFileType | null {
     startsWith(bytes, [0x50, 0x4b, 0x03, 0x04]) ||
     startsWith(bytes, [0x50, 0x4b, 0x05, 0x06]) ||
     startsWith(bytes, [0x50, 0x4b, 0x07, 0x08])
-  )
+  ) {
+    // ZIP container — sniff which Office flavor it wraps (first local entries)
+    if (containsEarly(bytes, ascii('word/'), 1024))
+      return {
+        mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        extension: 'docx',
+        label: 'Word 文档（docx）',
+        category: 'document'
+      };
+    if (containsEarly(bytes, ascii('xl/'), 1024))
+      return {
+        mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        extension: 'xlsx',
+        label: 'Excel 表格（xlsx）',
+        category: 'document'
+      };
+    if (containsEarly(bytes, ascii('ppt/'), 1024))
+      return {
+        mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        extension: 'pptx',
+        label: 'PowerPoint 演示（pptx）',
+        category: 'document'
+      };
     return { mime: 'application/zip', extension: 'zip', label: 'ZIP 压缩包（docx/xlsx 也是 ZIP）', category: 'archive' };
+  }
   if (startsWith(bytes, [0x1f, 0x8b]))
     return { mime: 'application/gzip', extension: 'gz', label: 'GZIP 压缩包', category: 'archive' };
   if (startsWith(bytes, ascii('Rar!')))

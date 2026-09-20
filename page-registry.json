@@ -8,6 +8,8 @@
   { "id": "pdf-to-base64", "path": "/pdf-to-base64/", "html": "pdf-to-base64/index.html", "input": "fromPdf", "priority": "0.8" },
   { "id": "base64-decode-errors", "path": "/base64-decode-errors/", "html": "base64-decode-errors/index.html", "input": "decodeErrors", "priority": "0.7" },
   { "id": "json-to-file", "path": "/json-to-file/", "html": "json-to-file/index.html", "input": "jsonToFile", "priority": "0.8" },
+  { "id": "base64-to-word", "path": "/base64-to-word/", "html": "base64-to-word/index.html", "input": "toWord", "priority": "0.8" },
+  { "id": "base64-to-excel", "path": "/base64-to-excel/", "html": "base64-to-excel/index.html", "input": "toExcel", "priority": "0.8" },
   { "id": "privacy", "path": "/privacy/", "html": "privacy/index.html", "input": "privacy", "priority": "0.3" },
   { "id": "about", "path": "/about/", "html": "about/index.html", "input": "about", "priority": "0.4" },
   { "id": "terms", "path": "/terms/", "html": "terms/index.html", "input": "terms", "priority": "0.3" },

@@ -7,6 +7,8 @@ https://b64file.cn/base64-to-pdf/
 https://b64file.cn/pdf-to-base64/
 https://b64file.cn/base64-decode-errors/
 https://b64file.cn/json-to-file/
+https://b64file.cn/base64-to-word/
+https://b64file.cn/base64-to-excel/
 https://b64file.cn/privacy/
 https://b64file.cn/about/
 https://b64file.cn/terms/

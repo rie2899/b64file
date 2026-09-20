@@ -856,3 +856,14 @@ details[open] p { animation: fadeIn 0.25s ease both; }
 
 /* FAQ arrow pivots mechanically */
 summary::after { transition: transform 0.12s steps(2); }
+
+/* visible breadcrumbs — the crawler-facing kind */
+.crumbs {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  margin: -16px 0 18px;
+  letter-spacing: 0.3px;
+}
+.crumbs a { color: var(--muted); text-decoration: none; }
+.crumbs a:hover { color: var(--accent); }

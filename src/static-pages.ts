@@ -184,7 +184,7 @@ const pageData: Record<PageId, PageContent> = {
   },
   'base64-to-pdf': {
     title: 'Base64 转 PDF 在线工具 - 电子发票合同还原 - b64file',
-    desc: '粘贴 PDF 的 Base64 编码，一键还原成 PDF 文件下载。电子发票、电子合同、接口吐出来的 PDF 数据都能处理。本地跑，不上传。',
+    desc: '免费在线工具：粘贴 PDF 的 Base64 编码，一键还原成 PDF 文件下载。电子发票、电子合同、接口吐出来的 PDF 数据都能处理。本地跑，不上传。',
     h1: 'Base64 转 PDF 在线工具',
     answer:
       '开票系统、签署平台吐出来的 Base64 串？贴进来还原成 PDF 直接下载。开头 JVBERi 就认得那是 PDF——这个你也不用记，工具替你看着。',
@@ -259,6 +259,68 @@ const pageData: Record<PageId, PageContent> = {
       { q: '长度 % 4 余 1 一定错吗？', a: '没错，一定是错的。合法 Base64 去掉填充后除以 4 只能余 0、2 或 3，余 1 说明数据缺了一块，跑不掉。' },
       { q: '解码成功但文件打不开？', a: '可能内容压根不是你以为的格式，也可能原始文件本身就坏了。先看看结果卡片识别出来的文件类型对不对。' },
       { q: '有自动修复工具吗？', a: '有，Base64 转文件工具把上面这些修复逻辑都装好了，贴进去就能看诊断报告。' }
+    ]
+  },
+  'base64-to-word': {
+    title: 'Base64 转 Word 在线工具 - docx 文档还原下载 - b64file',
+    desc: '粘贴 Base64 自动识别 docx 并还原为 Word 文档下载。接口返回的合同、报告、公文数据一键落地。本地处理不上传。',
+    h1: 'Base64 转 Word 在线工具',
+    answer:
+      '接口吐出来一坨 Base64，要的是 Word 文档？贴进来。工具看文件头认出 docx（别拿 .zip 骗它，没用），还原下载，全程不出浏览器。',
+    mode: 'to-file',
+    sections: [
+      {
+        h2: '适用场景',
+        html: `<ul>
+          <li><strong>接口返回 Word 附件</strong> — 签署平台、OA 系统把 docx 编成 Base64 塞在 JSON 里返回</li>
+          <li><strong>批量导出落地</strong> — 从接口数据里把 Word 报告还原成 .docx 文件</li>
+          <li><strong>不挑来源格式</strong> — 纯 Base64、data URL 前缀、整段 JSON 都能直接贴</li>
+        </ul>`
+      },
+      {
+        h2: 'docx 是怎么认出来的',
+        html: '<p>docx 本质是 ZIP 包，包头有 <code>PK</code> 标记，内部带 <code>word/</code> 目录。工具解出字节流后检查这两处，扩展名改成什么都骗不过它。识别结果卡片会标「Word 文档（docx）」，文件名自动配好 <code>.docx</code> 后缀。</p>'
+      },
+      {
+        h2: '老版本 .doc 怎么办',
+        html: '<p>97-2003 的老 .doc 不是 ZIP 结构，识别会落到「认不出的二进制文件」——但解码本身不受影响，直接下载后把扩展名改成 <code>.doc</code> 照样能用。新版 Office 和 WPS 都认。</p>'
+      }
+    ],
+    faqs: [
+      { q: '能转换格式吗？比如 docx 转 PDF？', a: '不能。工具只负责把 Base64 还原成原始文件，格式转换是另一回事。' },
+      { q: '文件会被上传吗？', a: '不会，识别和解码全部在你浏览器里完成，没有上传接口。' },
+      { q: 'WPS 打得开吗？', a: '能。还原的是原始 docx 文件，Office 和 WPS 都认。' }
+    ]
+  },
+  'base64-to-excel': {
+    title: 'Base64 转 Excel 在线工具 - xlsx 表格还原下载 - b64file',
+    desc: '粘贴 Base64 自动识别 xlsx 并还原为 Excel 表格下载。接口返回的对账单、报表数据一键落地。本地处理不上传。',
+    h1: 'Base64 转 Excel 在线工具',
+    answer:
+      '接口返回的报表数据是一坨 Base64？贴进来，工具认出 xlsx 就地还原成 Excel 文件下载。不看扩展名看文件头，改成 .txt 也骗不过它。',
+    mode: 'to-file',
+    sections: [
+      {
+        h2: '适用场景',
+        html: `<ul>
+          <li><strong>对账单 / 报表导出</strong> — 财务和运营系统把 xlsx 编成 Base64 走接口传输</li>
+          <li><strong>数据分析落地</strong> — 把接口里的表格数据还原成 .xlsx 继续处理</li>
+          <li><strong>格式不挑</strong> — 带不带 data: 前缀、有没有换行，贴进来就行</li>
+        </ul>`
+      },
+      {
+        h2: 'xlsx 是怎么认出来的',
+        html: '<p>xlsx 同样是 ZIP 包：<code>PK</code> 包头 + 内部 <code>xl/</code> 目录。两个特征都在，识别结果就标「Excel 表格（xlsx）」，下载文件名自动带 <code>.xlsx</code> 后缀。</p>'
+      },
+      {
+        h2: '带宏的 .xlsm 呢',
+        html: '<p>识别会显示「Excel 表格（xlsx）」，实际内容原样还原，下载后把扩展名改成 <code>.xlsm</code> 即可。宏是否启用由你本机的 Office 安全策略决定，与还原过程无关。</p>'
+      }
+    ],
+    faqs: [
+      { q: '能读出表格内容预览吗？', a: '不能。工具只做还原不做解析，下载后用 Excel / WPS 打开查看。' },
+      { q: '文件会上传吗？', a: '不会，处理全程在你浏览器里，数据不出设备。' },
+      { q: 'CSV 支持吗？', a: 'CSV 是纯文本，Base64 还原后工具会识别为纯文本，下载时把扩展名改成 .csv 即可。' }
     ]
   },
   'json-to-file': {
@@ -355,7 +417,7 @@ const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '技术实现',
-        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 RFC 4648 标准；全部逻辑跑着 72 项自动化测试。不放心的话，打开开发者工具的 Network 面板看看——没有一个数据请求。</p>'
+        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 RFC 4648 标准；全部逻辑跑着 74 项自动化测试。不放心的话，打开开发者工具的 Network 面板看看——没有一个数据请求。</p>'
       },
       {
         h2: '反馈与建议',
@@ -435,9 +497,14 @@ const CONTENT_ONLY_PAGES = new Set(['privacy', 'about', 'terms', '404']);
 export function renderShell(currentPage: PageId): string {
   const showTool = !CONTENT_ONLY_PAGES.has(currentPage);
   const d = pageData[currentPage] ?? pageData.home;
+  const crumbs =
+    currentPage !== 'home' && currentPage !== '404'
+      ? `<nav class="crumbs" aria-label="面包屑"><a href="/">❯ 首页</a> / <span>${d.h1}</span></nav>`
+      : '';
   return `
     ${header()}
     <main>
+      ${crumbs}
       ${hero(currentPage)}
       ${showTool ? toolCard(currentPage) : ''}
       ${contentSections(currentPage)}
@@ -576,7 +643,7 @@ function footer(): string {
         <strong>b64file</strong>
       </div>
       <p class="footer-tagline">由爱而生 · 数据不出浏览器 · 免费无广告</p>
-      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">local · rfc4648 · 72 tests · 0 trackers</span></div>
+      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">local · rfc4648 · 74 tests · 0 trackers</span></div>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>
