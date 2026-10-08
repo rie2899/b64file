@@ -60,6 +60,13 @@ describe('page registry consistency', () => {
     expect(contentPages.length).toBeGreaterThanOrEqual(14);
   });
 
+  it('有 quick 的页面渲染出首屏速查清单，没有的不渲染', () => {
+    const shell = renderShell('base64-decode-errors');
+    expect(shell).toContain('class="quick-list"');
+    expect(shell.split('<li>').length - 1).toBeGreaterThanOrEqual(5);
+    expect(renderShell('privacy')).not.toContain('class="quick-list"');
+  });
+
   it('导航里当前页有高亮（active + aria-current），其他页没有', () => {
     const shell = renderShell('base64-to-file');
     expect(shell).toContain('href="/base64-to-file/" class="active" aria-current="page"');

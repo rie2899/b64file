@@ -16,6 +16,7 @@ import { decodeBase64InWorker, encodeBytesInWorker } from './lib/b64-worker';
 const MAX_INPUT_CHARS = 200_000_000; // ~150 MB decoded
 const MAX_FILE_BYTES = 100 * 1024 * 1024;
 const BIG_FILE_BYTES = 20 * 1024 * 1024;
+const BIG_INPUT_CHARS = 400_000; // 超过这个量，先给个「正在处理」的反馈再开跑
 const WORKER_DECODE_CHARS = 20_000_000; // ~15 MB decoded — below this the main thread is instant
 const SHOW_OUTPUT_LIMIT = 10_000;
 
@@ -160,6 +161,17 @@ function initToFile(tool: HTMLElement): void {
         result.hidden = false;
         return;
       }
+    }
+
+    if (raw.length > BIG_INPUT_CHARS) {
+      diagnosis.hidden = false;
+      diagnosis.innerHTML =
+        '<ul class="diag-list"><li class="info">ℹ 输入不小，先扫一遍内容 <span class="pixel-loader" aria-hidden="true"></span></li></ul>';
+      await new Promise((resolve) => {
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => resolve(null));
+        else setTimeout(() => resolve(null), 0);
+      });
+      if (token !== runToken) return;
     }
 
     const n = normalizeBase64Input(raw);
@@ -375,6 +387,13 @@ function initToBase64(tool: HTMLElement): (file: File) => Promise<void> | void {
       if (!proceed) return;
     }
     currentFile = file;
+    if (file.size > BIG_FILE_BYTES) {
+      resultEl.hidden = false;
+      resultEl.innerHTML = `<p class="muted">正在读取 ${formatBytes(
+        file.size
+      )}——读完就开始编码 <span class="pixel-loader" aria-hidden="true"></span></p>`;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
     currentBytes = new Uint8Array(await file.arrayBuffer());
     const type = detectFileType(currentBytes);
     const icon = type ? CATEGORY_ICONS[type.category] : CATEGORY_ICONS.unknown;

@@ -22,6 +22,8 @@ interface PageContent {
   mode: ToolMode;
   /** 文本模式下默认的转换方向（默认 encode） */
   textDir?: 'encode' | 'decode';
+  /** 首屏速查：让问题型页面第一屏就给结论，也方便 AI 搜索直接摘 */
+  quick?: string[];
   sections: Section[];
   faqs: Faq[];
 }
@@ -232,10 +234,17 @@ export const pageData: Record<PageId, PageContent> = {
     answer:
       '解码失败不是玄学，八成是这五种之一。其中四类贴进工具就自动修好；第五种（数据截断）修不了——但工具会明确告诉你断在哪，省得瞎猜。',
     mode: 'to-file',
+    quick: [
+      '非法字符：混进了字母表以外的内容（中文、全角空格、二进制垃圾）',
+      '填充符错误：长度不是 4 的倍数，缺的补、多的删',
+      '数据被截断：去掉填充后长度 % 4 余 1，这种真的修不了',
+      'Base64URL 混用：出现 - 或 _，工具会自动换算',
+      '前缀没去掉：data:image/png;base64, 那截不算数据'
+    ],
     sections: [
       {
         h2: '1. 非法字符',
-        html: '<p>Base64 的字母表就这么些字符：A-Z、a-z、0-9、<code>+</code>、<code>/</code>，再加填充符 <code>=</code>。混进中文、全角空格、中文标点，或者哪来的二进制垃圾，都会直接报错。<strong>解决办法：</strong>删掉这些非法字符，或者干脆贴进本站工具，它会告诉你具体错在第几位。</p>'
+        html: '<p>Base64 的字母表就这么些字符：A-Z、a-z、0-9、<code>+</code>、<code>/</code>，再加填充符 <code>=</code>（<a href="https://www.rfc-editor.org/rfc/rfc4648#section-4" target="_blank" rel="noopener">RFC 4648 第 4 节</a>）。混进中文、全角空格、中文标点，或者哪来的二进制垃圾，都会直接报错。<strong>解决办法：</strong>删掉这些非法字符，或者干脆贴进本站工具，它会告诉你具体错在第几位。</p>'
       },
       {
         h2: '2. 填充符缺失或多余',
@@ -359,6 +368,11 @@ export const pageData: Record<PageId, PageContent> = {
       '一段 Base64，想知道它写的是什么？贴进来，方向选「Base64 → 文本」，原文立刻出来。URL-safe 的 - _、丢掉的 =、复制时带进来的换行，都替你理顺了，解出来对不对一眼就能看见。',
     mode: 'text',
     textDir: 'decode',
+    quick: [
+      '只按 UTF-8 解，GBK 内容会乱码（回源头转码）',
+      'URL-safe（- _）、缺填充符、复制的换行、Data URL 前缀都会自动处理',
+      '只要文件、不想在屏幕上读 → 用 Base64 转 TXT'
+    ],
     sections: [
       {
         h2: '怎么用：两步',
@@ -543,10 +557,15 @@ export const pageData: Record<PageId, PageContent> = {
     answer:
       '把 <code>data:image/png;base64,...</code> 贴进来：前缀自动摘掉、MIME 记下来、文件还给你。反过来，拖个文件进来就能生成可以直接嵌进 CSS 或 HTML 的 Data URL。',
     mode: 'to-file',
+    quick: [
+      '结构：<code>data:[&lt;mediatype&gt;][;base64],&lt;data&gt;</code>',
+      '适合：几 KB 的小图标、单文件 HTML、邮件模板',
+      '别用：大图、要复用、要缓存的资源 —— 它撑大体积还不能单独缓存'
+    ],
     sections: [
       {
         h2: 'Data URL 长什么样',
-        html: '<p>结构是 <code>data:[&lt;mediatype&gt;][;base64],&lt;data&gt;</code>。拿 <code>data:image/png;base64,iVBORw0KGgo...</code> 举例：<code>data:</code> 是声明，中间那段是 MIME 类型和 base64 标记，逗号之后才是数据本体。所以解码的第一步，永远是先把逗号前面那截摘掉。</p>'
+        html: '<p>结构是 <code>data:[&lt;mediatype&gt;][;base64],&lt;data&gt;</code>。拿 <code>data:image/png;base64,iVBORw0KGgo...</code> 举例：<code>data:</code> 是声明，中间那段是 MIME 类型和 base64 标记，逗号之后才是数据本体。所以解码的第一步，永远是先把逗号前面那截摘掉。</p><p>格式细节可以看 <a href="https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Basics_of_HTTP/Data_URLs" target="_blank" rel="noopener">MDN 的 Data URL 说明</a>。</p>'
       },
       {
         h2: '什么时候该用，什么时候别用',
@@ -571,6 +590,11 @@ export const pageData: Record<PageId, PageContent> = {
       'JWT 是 Base64URL 加两个点号拼起来的，中间那段 payload 就是明文 JSON。贴进来直接看内容 —— 但记住：<strong>看得见不等于可信</strong>，签名必须在服务端验。',
     mode: 'text',
     textDir: 'decode',
+    quick: [
+      'header：算法与类型，比如 <code>{"alg":"HS256"}</code>',
+      'payload：真正的内容，能解出来看',
+      'signature：签名，不是数据 —— 解不出东西，验签得在服务端做'
+    ],
     sections: [
       {
         h2: '三段分别是什么',
@@ -651,7 +675,7 @@ export const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '技术实现',
-        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 RFC 4648 标准；全部逻辑跑着 85 项自动化测试。</p>'
+        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 <a href="https://www.rfc-editor.org/rfc/rfc4648" target="_blank" rel="noopener">RFC 4648</a> 标准；全部逻辑跑着 86 项自动化测试。</p>'
       },
       {
         h2: '反馈与建议',
@@ -790,6 +814,7 @@ function hero(page: PageId): string {
       <p class="hero-prompt" aria-hidden="true"><span class="prompt-sign">❯</span> paste --anything<span class="hero-cursor"></span><span class="prompt-comment"># 粘贴即处理</span></p>
       <h1>${d.h1}</h1>
       <p class="answer">${d.answer}</p>
+      ${d.quick?.length ? `<ul class="quick-list">${d.quick.map((q) => `<li>${q}</li>`).join('')}</ul>` : ''}
     </section>
   `;
 }
@@ -978,7 +1003,7 @@ function footer(): string {
         <strong>b64file</strong>
       </div>
       <p class="footer-tagline">由爱而生 · 免费 · 无账号 · 无广告</p>
-      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 85 tests</span></div>
+      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 86 tests</span></div>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>

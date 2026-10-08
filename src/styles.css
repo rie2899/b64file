@@ -1,6 +1,23 @@
 /* b64file — Claude Code palette, pixel-terminal aesthetic.
    Sharp corners, hard offset shadows, scanlines, mono UI chrome. */
 
+/* ---------- 自托管等宽字体（拉丁子集；中文走系统字体） ---------- */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin-700-normal.woff2') format('woff2');
+}
+
 :root {
   color-scheme: light;
   --bg: #faf9f5;
@@ -28,7 +45,7 @@
   --term-ink: #e8e6dd;
   --term-muted: #8f8b80;
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  --mono: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, 'Courier New', monospace;
 }
 
 :root[data-theme='dark'] {
@@ -101,12 +118,13 @@ a:hover { text-decoration: underline; }
 }
 
 .nav {
-  max-width: 1080px;
+  /* 与 main 的 860px 对齐 —— 不然 logo 和正文左边缘会差出一截 */
+  max-width: 860px;
   margin: 0 auto;
   padding: 13px 20px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .brand {
@@ -134,7 +152,7 @@ a:hover { text-decoration: underline; }
 .nav-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
+  gap: 4px 14px;
   font-family: var(--mono);
   font-size: 13px;
   flex: 1;
@@ -173,7 +191,8 @@ a:hover { text-decoration: underline; }
 /* ---------- layout / hero ---------- */
 
 main {
-  max-width: 780px;
+  /* 和 nav 用同一个容器宽度，两边左边缘才能对齐 */
+  max-width: 860px;
   margin: 0 auto;
   padding: 36px 20px 64px;
 }
@@ -745,9 +764,9 @@ details[open] p { animation: fadeIn 0.25s ease both; }
 
 /* ---------- responsive ---------- */
 
-@media (max-width: 640px) {
-  .nav { flex-wrap: nowrap; gap: 10px; padding: 11px 14px; }
-  /* 一行横向滚动，不再折成两行（折行会吃掉首屏一大块高度） */
+/* 导航始终一行：窄屏横向滚动，不折行（折行会吃掉首屏一大块高度） */
+@media (max-width: 900px) {
+  .nav { flex-wrap: nowrap; gap: 12px; }
   .nav-links {
     order: 0;
     width: auto;
@@ -756,11 +775,15 @@ details[open] p { animation: fadeIn 0.25s ease both; }
     flex-wrap: nowrap;
     overflow-x: auto;
     gap: 0 14px;
-    font-size: 12px;
     scrollbar-width: none;
   }
   .nav-links::-webkit-scrollbar { display: none; }
   .nav-links a { white-space: nowrap; }
+}
+
+@media (max-width: 640px) {
+  .nav { padding: 11px 14px; }
+  .nav-links { font-size: 12px; }
   .local-chip { display: none; }
 
   .mode-tab { font-size: 12px; padding: 9px 8px; }
@@ -901,3 +924,20 @@ summary::after { transition: transform 0.12s steps(2); }
   font-size: 12px;
   color: var(--muted);
 }
+
+/* ---------- 首屏速查清单 ---------- */
+
+.quick-list {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.quick-list li { padding-left: 18px; position: relative; }
+.quick-list li::before { content: '❯'; position: absolute; left: 0; color: var(--accent); }
