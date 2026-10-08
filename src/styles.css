@@ -941,3 +941,38 @@ summary::after { transition: transform 0.12s steps(2); }
 
 .quick-list li { padding-left: 18px; position: relative; }
 .quick-list li::before { content: '❯'; position: absolute; left: 0; color: var(--accent); }
+
+/* ---------- 宽屏并排对比：输入在左，诊断/结果在右 ---------- */
+
+@media (min-width: 1000px) {
+  .mode-panel[data-panel='to-file']:not([hidden]),
+  .mode-panel[data-panel='text']:not([hidden]) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+    gap: 14px 22px;
+  }
+
+  /* 显式指定行列：光靠自动布局会把诊断栏挤到输入框下面那行去 */
+  .mode-panel[data-panel='to-file'] > #b64-input { grid-column: 1; grid-row: 1; }
+  .mode-panel[data-panel='to-file'] > .input-actions { grid-column: 1; grid-row: 2; }
+  .mode-panel[data-panel='to-file'] > .input-hint { grid-column: 1; grid-row: 3; }
+  .mode-panel[data-panel='to-file'] > #b64-diagnosis { grid-column: 2; grid-row: 1; }
+  .mode-panel[data-panel='to-file'] > #b64-result { grid-column: 2; grid-row: 2 / 4; }
+
+  .mode-panel[data-panel='text'] > .text-direction { grid-column: 1 / -1; grid-row: 1; }
+  .mode-panel[data-panel='text'] > #text-input { grid-column: 1; grid-row: 2; }
+  .mode-panel[data-panel='text'] > .encode-options { grid-column: 1; grid-row: 3; }
+  .mode-panel[data-panel='text'] > #text-output { grid-column: 2; grid-row: 2 / 4; }
+
+  /* 右栏原本各自带 14px 上边距（堆叠时的间距），并排时会把右栏压低，清零 */
+  .mode-panel[data-panel='to-file'] > #b64-diagnosis,
+  .mode-panel[data-panel='to-file'] > #b64-result,
+  .mode-panel[data-panel='text'] > #text-output { margin-top: 0; }
+
+  /* 两栏高度对齐，方便左右对照 */
+  .mode-panel[data-panel='to-file'] > #b64-input,
+  .mode-panel[data-panel='text'] > #text-input { min-height: 236px; }
+
+  .mode-panel[data-panel='text'] > #text-output .text-out { min-height: 236px; }
+}
