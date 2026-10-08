@@ -515,7 +515,7 @@ export const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '技术实现',
-        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 RFC 4648 标准；全部逻辑跑着 80 项自动化测试。</p>'
+        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 RFC 4648 标准；全部逻辑跑着 82 项自动化测试。</p>'
       },
       {
         h2: '反馈与建议',
@@ -662,10 +662,12 @@ function toolCard(page: PageId): string {
         <textarea id="b64-input" class="mono-input" rows="6" spellcheck="false"
           placeholder="贴什么都行——纯 Base64、data:image/png;base64,... 开头的，或者整段接口吐出来的 JSON"></textarea>
         <div class="input-actions">
+          <button id="b64-sample" class="ghost-btn" type="button">载入示例</button>
           <button id="b64-load-file" class="ghost-btn" type="button">导入 .txt / .b64</button>
           <input type="file" id="b64-file-input" accept=".txt,.b64,.text,text/plain" hidden />
           <button id="b64-clear" class="ghost-btn" type="button">清空</button>
         </div>
+        <p class="input-hint">粘贴即自动处理，不用点按钮</p>
         <div id="b64-diagnosis" class="diagnosis" hidden></div>
         <div id="b64-result" class="result-area" hidden></div>
       </div>
@@ -718,15 +720,91 @@ function faqSection(page: PageId): string {
   `;
 }
 
+/** 站内短名（导航/相关链接用；h1 太长不适合做链接文字） */
+const SHORT_LABEL: Record<string, string> = {
+  home: '首页',
+  'base64-to-file': 'Base64 转文件',
+  'file-to-base64': '文件转 Base64',
+  'base64-to-image': 'Base64 转图片',
+  'image-to-base64': '图片转 Base64',
+  'base64-to-pdf': 'Base64 转 PDF',
+  'pdf-to-base64': 'PDF 转 Base64',
+  'base64-to-word': 'Base64 转 Word',
+  'base64-to-excel': 'Base64 转 Excel',
+  'base64-to-pptx': 'Base64 转 PPTX',
+  'base64-to-text': 'Base64 转文本',
+  base64url: 'Base64URL / JWT',
+  'json-to-file': 'JSON 转文件',
+  'base64-decode-errors': '解码失败排查',
+  about: '关于',
+  privacy: '隐私政策',
+  terms: '服务条款'
+};
+
+/**
+ * 页面分组。整站其实是同一个工具的三种模式（Base64→文件 / 文件→Base64 / 文本编解码），
+ * 各页面只是不同关键词的着陆页 —— 所以相关链接按"关系"取几条，而不是把 16 个页面全铺一遍。
+ */
+type PageGroup = 'decode' | 'encode' | 'text' | 'guide' | 'info' | 'home';
+const PAGE_GROUP: Record<string, PageGroup> = {
+  home: 'home',
+  'base64-to-file': 'decode',
+  'base64-to-image': 'decode',
+  'base64-to-pdf': 'decode',
+  'base64-to-word': 'decode',
+  'base64-to-excel': 'decode',
+  'base64-to-pptx': 'decode',
+  'json-to-file': 'decode',
+  'base64-to-text': 'text',
+  base64url: 'text',
+  'file-to-base64': 'encode',
+  'image-to-base64': 'encode',
+  'pdf-to-base64': 'encode',
+  'base64-decode-errors': 'guide',
+  about: 'info',
+  privacy: 'info',
+  terms: 'info'
+};
+
+const GROUP_LABEL: Record<string, string> = {
+  decode: '同样是从 Base64 还原文件',
+  encode: '同样是把文件转成 Base64',
+  text: '同样是文本编解码',
+  guide: '遇到报错看这里',
+  info: '常用工具'
+};
+
 function relatedLinks(currentPage: PageId): string {
-  const items = (pageRegistry as Array<{ id: string; path: string; hide?: boolean }>)
-    .filter((p) => !p.hide && p.id !== currentPage)
-    .map((p) => `<a href="${p.path}">${pageData[p.id]?.h1 ?? p.id}</a>`)
-    .join('');
+  const all = (pageRegistry as Array<{ id: string; path: string; hide?: boolean }>).filter(
+    (p) => !p.hide && p.id !== currentPage
+  );
+  const g = PAGE_GROUP[currentPage] ?? 'info';
+  const take = (group: PageGroup, n: number) => all.filter((p) => PAGE_GROUP[p.id] === group).slice(0, n);
+  const byId = (id: string) => all.filter((p) => p.id === id);
+
+  const rows: Array<[string, typeof all]> = [];
+  if (g === 'decode' || g === 'encode' || g === 'text') {
+    rows.push([GROUP_LABEL[g], take(g, 3)]);
+    rows.push(['反过来用', take(g === 'encode' ? 'decode' : 'encode', 1)]);
+    rows.push([GROUP_LABEL.guide, take('guide', 1)]);
+  } else {
+    rows.push([GROUP_LABEL.info, [...byId('base64-to-file'), ...byId('file-to-base64'), ...byId('base64-to-text'), ...byId('base64-decode-errors')]]);
+  }
+
+  const body = rows
+    .filter(([, items]) => items.length > 0)
+    .map(
+      ([label, items]) =>
+        `<div class="related-row"><span class="rg-label">${label}</span><div class="related-links">${items
+          .map((p) => `<a href="${p.path}">${SHORT_LABEL[p.id] ?? p.id}</a>`)
+          .join('')}</div></div>`
+    )
+    .join('\n      ');
+
   return `
     <section class="section">
       <h2>相关工具与指南</h2>
-      <div class="related-links">${items}</div>
+      ${body}
     </section>
   `;
 }
@@ -740,7 +818,7 @@ function footer(): string {
         <strong>b64file</strong>
       </div>
       <p class="footer-tagline">由爱而生 · 免费 · 无账号 · 无广告</p>
-      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 80 tests</span></div>
+      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 82 tests</span></div>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>

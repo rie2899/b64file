@@ -30,6 +30,10 @@ const CATEGORY_ICONS: Record<FileCategory | 'unknown', string> = {
   unknown: '❓'
 };
 
+/** 空态示例：一张 64×64 的棋盘 PNG（赤陶配色），让第一次来的人一键看到结果 */
+export const SAMPLE_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAa0lEQVR42u3XMQ0AIAxFQZQ0uEIKWnGDgTJ1gXAJYwduevltzZG+iJ6+2+4bAAAAAEAJ8MpHT/cAAAAAADWAEgMAAADYA0oMAAAAYA8oMQAAAIA9oMQAAAAA9oASAwAAANgDSgwAAADwDWAD8bMY8SrLAoYAAAAASUVORK5CYII=';
+
 export function initTool(): void {
   const tool = document.querySelector<HTMLElement>('#tool');
   if (!tool || tool.dataset.initialized === '1') return;
@@ -104,6 +108,7 @@ function initToFile(tool: HTMLElement): void {
   const loadBtn = tool.querySelector<HTMLButtonElement>('#b64-load-file');
   const fileInput = tool.querySelector<HTMLInputElement>('#b64-file-input');
   const clearBtn = tool.querySelector<HTMLButtonElement>('#b64-clear');
+  const sampleBtn = tool.querySelector<HTMLButtonElement>('#b64-sample');
   let timer: number | undefined;
   let runToken = 0;
 
@@ -202,6 +207,11 @@ function initToFile(tool: HTMLElement): void {
   });
   clearBtn?.addEventListener('click', () => {
     input.value = '';
+    run();
+    input.focus();
+  });
+  sampleBtn?.addEventListener('click', () => {
+    input.value = SAMPLE_B64;
     run();
     input.focus();
   });

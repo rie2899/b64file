@@ -60,6 +60,12 @@ describe('page registry consistency', () => {
     expect(contentPages.length).toBeGreaterThanOrEqual(14);
   });
 
+  it('每个页面都有真实的 updated 日期（sitemap lastmod 用，防止每次构建都刷新）', () => {
+    for (const p of pages) {
+      expect((p as { updated?: string }).updated, `缺少 updated: ${p.id}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+  });
+
   it('pageData 没有孤儿键，mode 取值合法', () => {
     const ids = new Set(pages.map((p) => p.id));
     for (const key of Object.keys(pageData)) {

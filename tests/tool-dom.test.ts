@@ -156,6 +156,22 @@ describe('tool DOM interaction', () => {
     expect(result?.hidden).toBe(true);
   });
 
+  it('载入示例按钮填入样例并直接出结果', async () => {
+    await import('../src/tool');
+
+    const btn = document.querySelector<HTMLButtonElement>('#b64-sample');
+    expect(btn, '缺少「载入示例」按钮').toBeTruthy();
+    btn!.click();
+
+    await new Promise((r) => setTimeout(r, 400));
+
+    const input = document.querySelector<HTMLTextAreaElement>('#b64-input');
+    expect(input!.value.length).toBeGreaterThan(100);
+    const result = document.querySelector<HTMLElement>('#b64-result');
+    expect(result?.hidden).toBe(false);
+    expect(result?.textContent).toContain('PNG');
+  });
+
   it('encodes text in text mode', async () => {
     await import('../src/tool');
 

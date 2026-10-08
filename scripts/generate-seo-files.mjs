@@ -4,7 +4,9 @@ const config = JSON.parse(readFileSync('site.config.json', 'utf8'));
 const allPages = JSON.parse(readFileSync('page-registry.json', 'utf8'));
 const pages = allPages.filter((p) => !p.hide); // 404 等页面不进 sitemap
 const siteUrl = config.siteUrl.replace(/\/$/, '');
-const today = new Date().toISOString().slice(0, 10);
+// lastmod 用 page-registry.json 里每页真实的 updated（改内容时手改那个字段），
+// 别用构建日 —— 每次都刷新 lastmod 会被搜索引擎判定不可信而忽略。
+const today = new Date().toISOString().slice(0, 10); // 仅作兜底
 
 writeFileSync(
   'public/robots.txt',
@@ -15,8 +17,8 @@ writeFileSync(
   'public/sitemap.xml',
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pages
     .map(
-      ({ path, priority }) =>
-        `  <url>\n    <loc>${siteUrl}${path}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>`
+      ({ path, priority, updated }) =>
+        `  <url>\n    <loc>${siteUrl}${path}</loc>\n    <lastmod>${updated ?? today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>`
     )
     .join('\n')}\n</urlset>\n`
 );
