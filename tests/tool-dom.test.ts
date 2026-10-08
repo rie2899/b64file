@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderShell } from '../src/static-pages';
-import { encodeBytesToBase64 } from '../src/lib/base64';
+import { encodeBytesToBase64, utf8ToBytes } from '../src/lib/base64';
 
 describe('tool DOM interaction', () => {
   beforeEach(() => {
@@ -196,6 +196,30 @@ describe('tool DOM interaction', () => {
     expect(out2).not.toContain('+');
     expect(out2).not.toContain('/');
     expect(out2).toContain('-');
+  });
+
+  it('粘贴 JWT 会解出 header 与 payload 的明文 JSON', async () => {
+    await import('../src/tool');
+
+    const tool = document.querySelector<HTMLElement>('#tool');
+    tool?.querySelector<HTMLButtonElement>('.mode-tab[data-mode="text"]')?.click();
+
+    const radio = document.querySelector<HTMLInputElement>('input[name="text-dir"][value="decode"]');
+    radio!.checked = true;
+    radio!.dispatchEvent(new Event('change', { bubbles: true }));
+
+    const b64u = (o: unknown) => encodeBytesToBase64(utf8ToBytes(JSON.stringify(o)), { urlSafe: true });
+    const jwt = `${b64u({ alg: 'HS256', typ: 'JWT' })}.${b64u({ sub: '1234567890', name: 'Sia' })}.fakesignature`;
+
+    const input = document.querySelector<HTMLTextAreaElement>('#text-input');
+    input!.value = jwt;
+    input!.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 350));
+
+    const out = document.querySelector('#text-output')?.textContent ?? '';
+    expect(out).toContain('识别为 JWT');
+    expect(out).toContain('HS256');
+    expect(out).toContain('1234567890');
   });
 
   it('encodes text in text mode', async () => {

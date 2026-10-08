@@ -498,6 +498,20 @@ function initTextMode(tool: HTMLElement): void {
     if (dir === 'encode') {
       out = encodeBytesToBase64(utf8ToBytes(val), { urlSafe: urlSafeBox?.checked ?? false });
     } else {
+      // 先看是不是 JWT：是就把 header 和 payload 摊开给人看
+      const jwt = val.trim().match(JWT_PATTERN);
+      const header = jwt ? decodeJwtPart(jwt[1]) : null;
+      const payload = jwt ? decodeJwtPart(jwt[2]) : null;
+      if (jwt && header && payload) {
+        trackEvent('tool', 'jwt_decode', 'text');
+        renderOut(
+          `// header\n${header}\n\n// payload\n${payload}`,
+          payload,
+          '<p class="muted">ℹ 识别为 JWT：上面是 header 和 payload 的明文。第三段是签名，不做验证，也不能当凭证。</p>'
+        );
+        return;
+      }
+
       const n = normalizeBase64Input(val);
       const v = validateBase64(n.normalized);
       if (!v.valid) {
@@ -508,15 +522,20 @@ function initTextMode(tool: HTMLElement): void {
       out = bytesToUtf8(decodeBase64ToBytes(n.normalized));
     }
 
+    renderOut(out, out, '');
+  };
+
+  const renderOut = (display: string, copyValue: string, note: string) => {
     output.hidden = false;
     output.innerHTML = `
-      <pre class="text-out">${escapeHtml(out)}</pre>
+      ${note}
+      <pre class="text-out">${escapeHtml(display)}</pre>
       <div class="btn-row">
         <button class="btn" id="text-copy" type="button">复制</button>
         <span class="copy-feedback" id="text-fb" hidden>已复制 ✓</span>
       </div>`;
     output.querySelector('#text-copy')?.addEventListener('click', async () => {
-      if (await copyText(out)) {
+      if (await copyText(copyValue)) {
         trackEvent('tool', 'copy_result', 'text');
         const fb = output.querySelector<HTMLElement>('#text-fb');
         if (fb) {
@@ -541,6 +560,19 @@ function initTextMode(tool: HTMLElement): void {
       run();
     })
   );
+}
+
+/** JWT：三段 Base64URL，点号分隔。能解的是前两段——第三段是签名，不是数据 */
+const JWT_PATTERN = /^([A-Za-z0-9_-]{10,})\.([A-Za-z0-9_-]{10,})\.([A-Za-z0-9_-]*)$/;
+
+function decodeJwtPart(part: string): string | null {
+  const n = normalizeBase64Input(part);
+  if (!validateBase64(n.normalized).valid) return null;
+  try {
+    return JSON.stringify(JSON.parse(bytesToUtf8(decodeBase64ToBytes(n.normalized))), null, 2);
+  } catch {
+    return null;
+  }
 }
 
 /* ---------- helpers ---------- */

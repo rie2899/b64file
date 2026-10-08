@@ -455,6 +455,142 @@ export const pageData: Record<PageId, PageContent> = {
       { q: '这两种写法能混着用吗？', a: '最好别。同一份数据要么全标准要么全 URL-safe。混用虽然能解，但复制进 URL 照样会出问题。' }
     ]
   },
+  'base64-to-svg': {
+    title: 'Base64 转 SVG 在线工具 - 矢量图还原下载 - b64file',
+    desc: '粘贴 Base64 自动认出 <svg 声明，还原成 SVG 矢量图文件下载。Data URL 前缀、换行、缺失填充符都会自动处理。',
+    h1: 'Base64 转 SVG 在线工具',
+    answer:
+      '图标、logo、矢量插图经常被 Base64 塞进 CSS、JSON 或邮件模板。贴进来，工具认出 <code>&lt;svg</code> 声明就还你一个能重新编辑的 .svg 文件。',
+    mode: 'to-file',
+    sections: [
+      {
+        h2: '什么时候会遇到 Base64 里的 SVG',
+        html: '<p>最常见的三处：CSS 里的 <code>background-image: url(data:image/svg+xml;base64,...)</code>；接口把图标当字段返回；设计工具或邮件模板导出时把矢量图内嵌。这些场景拿到手的都不是能直接打开的文件，得先还原。</p>'
+      },
+      {
+        h2: '还原成文件之后能干什么',
+        html: '<p>SVG 是矢量图，还原成 .svg 就能重新编辑：改颜色、改尺寸、拆图层、丢进 Figma 或 Illustrator。内嵌在 Base64 里的版本只能看，动不了。</p><p>另外，矢量图放大不糊 —— 这就是它跟 PNG、JPG 最大的区别。</p>'
+      },
+      {
+        h2: '识别靠声明，不靠扩展名',
+        html: '<p>工具看的是字节里有没有 <code>&lt;svg</code> 声明，所以哪怕原文没带扩展名、或者被塞在 JSON 字段里，一样认得出来。反过来说，如果那段 Base64 里根本不是 SVG（比如是 PNG），工具会照实告诉你是 PNG，不会硬凑一个 .svg 给你。</p>'
+      }
+    ],
+    faqs: [
+      { q: '内联写的 SVG 标签（不是 Base64）能处理吗？', a: '不能。内联标签本身就是源码，直接编辑就行；这个工具解的是 Base64。想反过来把 .svg 文件转成 Base64，用「文件转 Base64」。' },
+      { q: 'SVG 里的外链和字体会跟着走吗？', a: '会，还原是原样字节。里面的外链、字体声明、样式都在，能不能正常显示取决于打开它的环境。' },
+      { q: '为什么我的 SVG 还原后是乱码？', a: 'SVG 本身是文本，通常不会乱。乱码多半是那段 Base64 被截断、或者复制时丢了字符 —— 工具的诊断栏会告诉你错在第几位。' }
+    ]
+  },
+  'base64-to-mp3': {
+    title: 'Base64 转 MP3 在线工具 - 音频还原并下载 - b64file',
+    desc: '粘贴 Base64 还原成 MP3 音频文件下载。按帧头识别格式，WAV、OGG、FLAC、M4A 也一并认。',
+    h1: 'Base64 转 MP3 在线工具',
+    answer:
+      'TTS 接口、语音转写、离线音频资源，很多都返回 Base64 字符串。贴进来就能拿回一个能直接播放的音频文件。',
+    mode: 'to-file',
+    sections: [
+      {
+        h2: '音频为什么常被塞成 Base64',
+        html: '<p>接口要在一个 JSON 里同时返回文字和音频时，二进制没地方放，只能编码后塞进字段。语音合成接口、客服录音回传、把音频内联进 HTML，都是这个路子。</p>'
+      },
+      {
+        h2: '识别靠帧头，不靠文件名',
+        html: '<p>工具读字节开头判断真实格式：MP3 看 <code>ID3</code> 或同步字，WAV 看 <code>RIFF</code>，OGG、FLAC、M4A 各有各的开头。扩展名是按内容给的，不会出现「明明是 WAV 却存成 .mp3」这种事。</p>'
+      },
+      {
+        h2: '一个体积上的提醒',
+        html: '<p>Base64 比原始字节大约 <strong>33%</strong>。几分钟的录音转成 Base64 就是几兆的字符串，塞进 JSON 或日志会让它们变得很难看。要长期存，存二进制文件，别存 Base64 字符串。</p>'
+      }
+    ],
+    faqs: [
+      { q: '能直接在页面上播放吗？', a: '页面不做内联播放器 —— 下载下来用系统播放器打开更省事。' },
+      { q: '解码出来不是 MP3 怎么办？', a: '工具按内容识别格式，可能是 WAV、M4A 或 OGG。结果卡片上会写清它认成了什么。' },
+      { q: '超大音频能处理吗？', a: '单次粘贴上限很大（约 2 亿字符），日常语音片段完全够；再大就该用命令行工具了，别在浏览器里硬扛。' }
+    ]
+  },
+  'base64-to-txt': {
+    title: 'Base64 转 TXT 在线工具 - 还原纯文本文件 - b64file',
+    desc: '粘贴 Base64 还原成 .txt 纯文本文件下载：日志、配置、脚本、导出数据都能还原，按 UTF-8 解码。',
+    h1: 'Base64 转 TXT 在线工具',
+    answer:
+      '日志、配置、SQL、脚本被 Base64 之后，贴进来就能还原成 .txt 下载。只是想看几眼内容的话，用 「Base64 转文本」 更快，不用落盘。',
+    mode: 'to-file',
+    sections: [
+      {
+        h2: '转 .txt 和「Base64 转文本」的区别',
+        html: '<p>两者解的是同一段数据，区别只在结果怎么给你：这里给你一个文件下载；<a href="/base64-to-text/">Base64 转文本</a> 把内容直接铺在页面上，能选中、能复制、不落盘。要归档用前者，要扫一眼用后者。</p>'
+      },
+      {
+        h2: '不是所有 Base64 都能变成文本',
+        html: '<p>Base64 只是编码方式，背后可能是 PDF、图片、压缩包。那种数据解出来是二进制，当文本打开只会是乱码 —— 工具会先诊断，告诉它到底是什么类型。</p>'
+      },
+      {
+        h2: '中文变乱码的两种原因',
+        html: '<p>一是原始数据不是 UTF-8（老系统里 GBK 很常见），工具按 UTF-8 解就会出问题；二是那段 Base64 在复制过程中被截断。前者得回源头换编码，后者重新复制一份完整数据就行。</p>'
+      }
+    ],
+    faqs: [
+      { q: '能指定 GBK 之类的编码吗？', a: '目前只按 UTF-8 解码。GBK 内容请回源头转成 UTF-8，或者用本地脚本处理。' },
+      { q: '结果里的换行会不会丢？', a: '不会，换行是数据的一部分，原样还原。' },
+      { q: '支持多大？', a: '单次粘贴上限约 2 亿字符，日常的日志和配置远远够用。' }
+    ]
+  },
+  'data-url': {
+    title: 'Data URL 在线工具 - 生成与解析内联 base64 - b64file',
+    desc: '粘贴 data:image/png;base64,... 自动识别 MIME 并还原文件；拖个文件进来也能生成可直接嵌进 CSS、HTML 的 Data URL。',
+    h1: 'Data URL 生成与解析',
+    answer:
+      '把 <code>data:image/png;base64,...</code> 贴进来：前缀自动摘掉、MIME 记下来、文件还给你。反过来，拖个文件进来就能生成可以直接嵌进 CSS 或 HTML 的 Data URL。',
+    mode: 'to-file',
+    sections: [
+      {
+        h2: 'Data URL 长什么样',
+        html: '<p>结构是 <code>data:[&lt;mediatype&gt;][;base64],&lt;data&gt;</code>。拿 <code>data:image/png;base64,iVBORw0KGgo...</code> 举例：<code>data:</code> 是声明，中间那段是 MIME 类型和 base64 标记，逗号之后才是数据本体。所以解码的第一步，永远是先把逗号前面那截摘掉。</p>'
+      },
+      {
+        h2: '什么时候该用，什么时候别用',
+        html: '<ul><li><strong>适合</strong>：几 KB 的小图标、单文件 HTML、邮件模板、想减少请求数的关键小图</li><li><strong>别用</strong>：大图、要复用的资源、需要浏览器缓存的场景 —— Data URL 撑大 HTML 和 CSS、不能单独缓存，还比原文件大 33%</li></ul>'
+      },
+      {
+        h2: '三个常见坑',
+        html: '<ul><li>MIME 写错：<code>image/jpg</code> 不是标准写法，浏览器可能直接不渲染，应该写 <code>image/jpeg</code></li><li>CSS 里忘了引号：数据里含逗号和加号时最容易出问题，建议用引号把整个 url 包住</li><li>把大段 Base64 直接塞进 CSS 又不压缩，文件体积肉眼可见地涨</li></ul>'
+      }
+    ],
+    faqs: [
+      { q: 'Data URL 和 Base64 是一回事吗？', a: '不是。Base64 是编码方式，Data URL 是「MIME 类型 + Base64 数据」的一种写法。两种输入工具都认。' },
+      { q: '没标 ;base64 的那种 data: 呢？', a: '工具会先提示一句，再按 Base64 试着解。百分号编码的数据本来就不是 Base64，试解会报非法字符 —— 那种要用专门的 URL 解码工具。' },
+      { q: '能预览哪些图片格式？', a: '浏览器能显示的（PNG、JPG、GIF、WebP、SVG 等）都会直接给预览，不能显示的（比如 HEIC）给下载按钮。' }
+    ]
+  },
+  'jwt-decode': {
+    title: 'JWT 解码在线工具 - 查看 payload 内容 - b64file',
+    desc: '粘贴 JWT 立刻解出 header 与 payload 的 JSON 内容。只做解码、不做签名验证 —— 看得见不等于可信。',
+    h1: 'JWT 解码：看清 payload 里有什么',
+    answer:
+      'JWT 是 Base64URL 加两个点号拼起来的，中间那段 payload 就是明文 JSON。贴进来直接看内容 —— 但记住：<strong>看得见不等于可信</strong>，签名必须在服务端验。',
+    mode: 'text',
+    textDir: 'decode',
+    sections: [
+      {
+        h2: '三段分别是什么',
+        html: '<ul><li><strong>header</strong>：算法和类型，比如 <code>{"alg":"HS256","typ":"JWT"}</code></li><li><strong>payload</strong>：真正的内容 —— 用户 ID、权限、签发时间 <code>iat</code>、过期时间 <code>exp</code></li><li><strong>signature</strong>：用密钥对前两段算出来的签名，<strong>不是数据，解不出东西</strong></li></ul>'
+      },
+      {
+        h2: '看得见 ≠ 可信',
+        html: '<p>payload 只是 Base64URL 编码，不是加密。谁拿到 token 都能看见内容，所以别往里放密码、身份证号、密钥这类东西。防篡改靠的是第三段签名，而验签必须在服务端用密钥做。</p><p>换个角度说：任何声称「在线验证 JWT」但不问你要密钥的工具，验的一定不是真签名。</p>'
+      },
+      {
+        h2: '什么时候用得上',
+        html: '<p>排查登录态（token 里的 <code>exp</code> 是不是过期了）、确认后端下发的权限字段、看第三方回调里的 token 内容。开发调试时把 payload 看清楚，比在后端打日志快得多。</p>'
+      }
+    ],
+    faqs: [
+      { q: '为什么贴进去提示格式不对？', a: '两个常见原因：复制时漏了某一段；或者中间那段末尾的填充符在传递途中被吃掉了。工具会自动补填充符，但数据本身缺斤少两是补不回来的。' },
+      { q: 'Signature 能解码出来吗？', a: '不能，也不需要。签名是 HMAC 或 RSA 算出来的字节，不是编码过的数据。' },
+      { q: '能验证签名吗？', a: '不能，本站不做验证。验签需要密钥或公钥，属于服务端的事。' }
+    ]
+  },
   privacy: {
     title: '隐私政策 - b64file',
     desc: 'b64file 隐私政策：本站是纯静态页面，转换在浏览器里完成。这里说明我们处理与不处理哪些信息。',
@@ -515,7 +651,7 @@ export const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '技术实现',
-        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 RFC 4648 标准；全部逻辑跑着 84 项自动化测试。</p>'
+        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 RFC 4648 标准；全部逻辑跑着 85 项自动化测试。</p>'
       },
       {
         h2: '反馈与建议',
@@ -749,6 +885,11 @@ const SHORT_LABEL: Record<string, string> = {
   'base64-to-text': 'Base64 转文本',
   base64url: 'Base64URL / JWT',
   'json-to-file': 'JSON 转文件',
+  'base64-to-svg': 'Base64 转 SVG',
+  'base64-to-mp3': 'Base64 转 MP3',
+  'base64-to-txt': 'Base64 转 TXT',
+  'data-url': 'Data URL 工具',
+  'jwt-decode': 'JWT 解码',
   'base64-decode-errors': '解码失败排查',
   about: '关于',
   privacy: '隐私政策',
@@ -769,8 +910,13 @@ const PAGE_GROUP: Record<string, PageGroup> = {
   'base64-to-excel': 'decode',
   'base64-to-pptx': 'decode',
   'json-to-file': 'decode',
+  'base64-to-svg': 'decode',
+  'base64-to-mp3': 'decode',
+  'base64-to-txt': 'decode',
+  'data-url': 'decode',
   'base64-to-text': 'text',
   base64url: 'text',
+  'jwt-decode': 'text',
   'file-to-base64': 'encode',
   'image-to-base64': 'encode',
   'pdf-to-base64': 'encode',
@@ -832,7 +978,7 @@ function footer(): string {
         <strong>b64file</strong>
       </div>
       <p class="footer-tagline">由爱而生 · 免费 · 无账号 · 无广告</p>
-      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 84 tests</span></div>
+      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 85 tests</span></div>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>
