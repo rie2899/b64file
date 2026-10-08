@@ -675,7 +675,7 @@ export const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '技术实现',
-        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 <a href="https://www.rfc-editor.org/rfc/rfc4648" target="_blank" rel="noopener">RFC 4648</a> 标准；全部逻辑跑着 86 项自动化测试。</p>'
+        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 <a href="https://www.rfc-editor.org/rfc/rfc4648" target="_blank" rel="noopener">RFC 4648</a> 标准；全部逻辑跑着 89 项自动化测试。</p>'
       },
       {
         h2: '反馈与建议',
@@ -831,7 +831,7 @@ function toolCard(page: PageId): string {
       </div>
 
       <div class="mode-panel" data-panel="to-file">
-        <textarea id="b64-input" class="mono-input" rows="6" spellcheck="false"
+        <textarea id="b64-input" class="mono-input" rows="6" spellcheck="false" aria-label="粘贴 Base64 或文件数据"
           placeholder="贴什么都行——纯 Base64、data:image/png;base64,... 开头的，或者整段接口吐出来的 JSON"></textarea>
         <div class="input-actions">
           <button id="b64-sample" class="ghost-btn" type="button">载入示例</button>
@@ -839,7 +839,7 @@ function toolCard(page: PageId): string {
           <input type="file" id="b64-file-input" accept=".txt,.b64,.text,text/plain" hidden />
           <button id="b64-clear" class="ghost-btn" type="button">清空</button>
         </div>
-        <p class="input-hint">粘贴即自动处理，不用点按钮</p>
+        <p class="input-hint">粘贴即自动处理，不用点按钮（Ctrl+Enter 立刻转换 / Esc 清空）</p>
         <div id="b64-diagnosis" class="diagnosis" hidden></div>
         <div id="b64-result" class="result-area" hidden></div>
       </div>
@@ -855,6 +855,7 @@ function toolCard(page: PageId): string {
         <div id="encode-options" class="encode-options" hidden>
           <label><input type="checkbox" id="opt-urlsafe" /> URL-safe（- _ 替代 + /，无填充）</label>
           <label><input type="checkbox" id="opt-dataurl" /> 带上 data: 前缀</label>
+          <label><input type="checkbox" id="opt-wrap76" /> 按 76 字符换行（MIME / PEM 格式）</label>
         </div>
         <div id="encode-result" hidden></div>
       </div>
@@ -867,7 +868,7 @@ function toolCard(page: PageId): string {
         <div class="encode-options" id="text-urlsafe-wrap"${d.textDir === 'decode' ? ' hidden' : ''}>
           <label><input type="checkbox" id="opt-text-urlsafe" /> URL-safe 输出（<code>-</code> <code>_</code> 替代 <code>+</code> <code>/</code>，去掉填充）</label>
         </div>
-        <textarea id="text-input" class="mono-input" rows="4" spellcheck="false"
+        <textarea id="text-input" class="mono-input" rows="4" spellcheck="false" aria-label="输入文本或 Base64"
           placeholder="输入文本或 Base64，方向在上面切换"></textarea>
         <div id="text-output" class="text-output" hidden></div>
       </div>
@@ -1003,7 +1004,7 @@ function footer(): string {
         <strong>b64file</strong>
       </div>
       <p class="footer-tagline">由爱而生 · 免费 · 无账号 · 无广告</p>
-      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 86 tests</span></div>
+      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 89 tests</span></div>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>

@@ -208,6 +208,19 @@ function initToFile(tool: HTMLElement): void {
     window.clearTimeout(timer);
     timer = window.setTimeout(run, 250);
   });
+  input.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      window.clearTimeout(timer);
+      run();
+      return;
+    }
+    if (e.key === 'Escape') {
+      window.clearTimeout(timer);
+      input.value = '';
+      run();
+    }
+  });
 
   loadBtn?.addEventListener('click', () => fileInput?.click());
   fileInput?.addEventListener('change', async () => {
@@ -414,6 +427,7 @@ function initToBase64(tool: HTMLElement): (file: File) => Promise<void> | void {
     if (!currentBytes || !currentFile) return;
     const urlSafe = (tool.querySelector('#opt-urlsafe') as HTMLInputElement)?.checked ?? false;
     const withDataUrl = (tool.querySelector('#opt-dataurl') as HTMLInputElement)?.checked ?? false;
+    const wrap76 = (tool.querySelector('#opt-wrap76') as HTMLInputElement)?.checked ?? false;
     const mime = currentFile.type || 'application/octet-stream';
     if (currentBytes.length > BIG_FILE_BYTES) {
       resultEl.hidden = false;
@@ -422,12 +436,32 @@ function initToBase64(tool: HTMLElement): (file: File) => Promise<void> | void {
       )}——挪到后台线程跑了，页面不卡，跑完自动出结果 <span class="pixel-loader" aria-hidden="true"></span></p>`;
     }
     let out = await encodeBytesInWorker(currentBytes, urlSafe);
+    // MIME / PEM 那种每行 76 字符的排法。带 data: 前缀时不能换行（会把 URL 拆坏），所以两者互斥
+    if (wrap76 && !withDataUrl) out = out.replace(/(.{76})/g, '$1\n').trimEnd();
     if (withDataUrl) out = `data:${mime};base64,${out}`;
     renderEncodeResult(resultEl, out);
     resultEl.hidden = false;
   };
 
-  options.querySelectorAll('input').forEach((i) => i.addEventListener('change', () => void encode()));
+  const dataUrlBox = tool.querySelector<HTMLInputElement>('#opt-dataurl');
+  const wrapBox = tool.querySelector<HTMLInputElement>('#opt-wrap76');
+  const syncWrapState = () => {
+    if (!wrapBox) return;
+    if (dataUrlBox?.checked) {
+      wrapBox.checked = false;
+      wrapBox.disabled = true;
+    } else {
+      wrapBox.disabled = false;
+    }
+  };
+  dataUrlBox?.addEventListener('change', syncWrapState);
+
+  options.querySelectorAll('input').forEach((i) =>
+    i.addEventListener('change', () => {
+      syncWrapState();
+      void encode();
+    })
+  );
 
   ['dragover', 'dragenter'].forEach((evt) =>
     dropZone.addEventListener(evt, (e) => {
@@ -570,6 +604,19 @@ function initTextMode(tool: HTMLElement): void {
   input.addEventListener('input', () => {
     window.clearTimeout(timer);
     timer = window.setTimeout(run, 200);
+  });
+  input.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      window.clearTimeout(timer);
+      run();
+      return;
+    }
+    if (e.key === 'Escape') {
+      window.clearTimeout(timer);
+      input.value = '';
+      run();
+    }
   });
   urlSafeBox?.addEventListener('change', run);
   tool.querySelectorAll<HTMLInputElement>('input[name="text-dir"]').forEach((r) =>

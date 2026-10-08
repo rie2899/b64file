@@ -90,6 +90,43 @@ describe('tool DOM interaction', () => {
     expect((result?.querySelector('#b64-out') as HTMLTextAreaElement)?.value.length).toBeGreaterThan(20);
   });
 
+  it('Ctrl+Enter 立刻转换，Esc 清空输入', async () => {
+    await import('../src/tool');
+
+    const input = document.querySelector<HTMLTextAreaElement>('#b64-input');
+    input!.value = 'aGVsbG8gYjY0ZmlsZQ=='; // "hello b64file"
+    input!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true }));
+    await new Promise((r) => setTimeout(r, 300));
+    expect(document.querySelector<HTMLElement>('#b64-result')?.hidden).toBe(false);
+
+    input!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await new Promise((r) => setTimeout(r, 300));
+    expect(input!.value).toBe('');
+    expect(document.querySelector<HTMLElement>('#b64-result')?.hidden).toBe(true);
+  });
+
+  it('勾选 MIME 换行后，输出按每行 76 字符排', async () => {
+    await import('../src/tool');
+
+    const bytes = new Uint8Array(200).map((_, i) => i % 251);
+    const file = new File([bytes], 'data.bin', { type: 'application/octet-stream' });
+    const ev = new Event('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(ev, 'clipboardData', { value: { files: [file] } });
+    document.dispatchEvent(ev);
+    await new Promise((r) => setTimeout(r, 300));
+
+    const box = document.querySelector<HTMLInputElement>('#opt-wrap76');
+    expect(box, '缺少 MIME 换行选项').toBeTruthy();
+    box!.checked = true;
+    box!.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 300));
+
+    const out = (document.querySelector('#b64-out') as HTMLTextAreaElement)?.value ?? '';
+    const lines = out.split('\n');
+    expect(lines.length).toBeGreaterThan(1);
+    expect(lines[0].length).toBe(76);
+  });
+
   it('toggles the theme and persists the choice', async () => {
     localStorage.clear();
     document.documentElement.dataset.theme = 'light';

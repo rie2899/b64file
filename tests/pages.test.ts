@@ -60,6 +60,12 @@ describe('page registry consistency', () => {
     expect(contentPages.length).toBeGreaterThanOrEqual(14);
   });
 
+  it('两个主要输入框都带 aria-label（读屏可用）', () => {
+    const shell = renderShell('home');
+    expect(shell).toContain('aria-label="粘贴 Base64 或文件数据"');
+    expect(shell).toContain('aria-label="输入文本或 Base64"');
+  });
+
   it('有 quick 的页面渲染出首屏速查清单，没有的不渲染', () => {
     const shell = renderShell('base64-decode-errors');
     expect(shell).toContain('class="quick-list"');
