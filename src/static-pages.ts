@@ -515,7 +515,7 @@ export const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '技术实现',
-        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 RFC 4648 标准；全部逻辑跑着 82 项自动化测试。</p>'
+        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 RFC 4648 标准；全部逻辑跑着 84 项自动化测试。</p>'
       },
       {
         h2: '反馈与建议',
@@ -599,7 +599,7 @@ export function renderShell(currentPage: PageId): string {
       ? `<nav class="crumbs" aria-label="面包屑"><a href="/">❯ 首页</a> / <span>${d.h1}</span></nav>`
       : '';
   return `
-    ${header()}
+    ${header(currentPage)}
     <main>
       ${crumbs}
       ${hero(currentPage)}
@@ -612,7 +612,22 @@ export function renderShell(currentPage: PageId): string {
   `;
 }
 
-function header(): string {
+/** 主导航项（顺序即展示顺序） */
+const NAV_ITEMS: Array<{ path: string; label: string }> = [
+  { path: '/base64-to-file/', label: 'Base64 转文件' },
+  { path: '/json-to-file/', label: 'JSON 转文件' },
+  { path: '/file-to-base64/', label: '文件转 Base64' },
+  { path: '/base64-to-image/', label: 'Base64 转图片' },
+  { path: '/base64-decode-errors/', label: '解码失败排查' }
+];
+
+function header(currentPage: PageId): string {
+  const currentPath = (pageRegistry as Array<{ id: string; path: string }>).find((p) => p.id === currentPage)?.path;
+  const links = NAV_ITEMS.map((item) =>
+    item.path === currentPath
+      ? `<a href="${item.path}" class="active" aria-current="page">${item.label}</a>`
+      : `<a href="${item.path}">${item.label}</a>`
+  ).join('\n          ');
   return `
     <header class="site-header">
       <nav class="nav" aria-label="主导航">
@@ -621,11 +636,7 @@ function header(): string {
           <span class="brand-word"><span class="brand-mark">b64</span>file</span>
         </a>
         <div class="nav-links">
-          <a href="/base64-to-file/">Base64 转文件</a>
-          <a href="/json-to-file/">JSON 转文件</a>
-          <a href="/file-to-base64/">文件转 Base64</a>
-          <a href="/base64-to-image/">Base64 转图片</a>
-          <a href="/base64-decode-errors/">解码失败排查</a>
+          ${links}
         </div>
         <div class="nav-side">
           <span class="local-chip" title="打开就能用，不需要注册或登录">无需登录</span>
@@ -691,6 +702,9 @@ function toolCard(page: PageId): string {
         <div class="text-direction">
           <label><input type="radio" name="text-dir" value="encode"${d.textDir === 'decode' ? '' : ' checked'} /> 文本 → Base64</label>
           <label><input type="radio" name="text-dir" value="decode"${d.textDir === 'decode' ? ' checked' : ''} /> Base64 → 文本</label>
+        </div>
+        <div class="encode-options" id="text-urlsafe-wrap"${d.textDir === 'decode' ? ' hidden' : ''}>
+          <label><input type="checkbox" id="opt-text-urlsafe" /> URL-safe 输出（<code>-</code> <code>_</code> 替代 <code>+</code> <code>/</code>，去掉填充）</label>
         </div>
         <textarea id="text-input" class="mono-input" rows="4" spellcheck="false"
           placeholder="输入文本或 Base64，方向在上面切换"></textarea>
@@ -818,7 +832,7 @@ function footer(): string {
         <strong>b64file</strong>
       </div>
       <p class="footer-tagline">由爱而生 · 免费 · 无账号 · 无广告</p>
-      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 82 tests</span></div>
+      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 84 tests</span></div>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>

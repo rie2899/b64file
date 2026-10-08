@@ -480,6 +480,8 @@ function initTextMode(tool: HTMLElement): void {
   const input = tool.querySelector<HTMLTextAreaElement>('#text-input');
   const output = tool.querySelector<HTMLElement>('#text-output');
   if (!input || !output) return;
+  const urlSafeBox = tool.querySelector<HTMLInputElement>('#opt-text-urlsafe');
+  const urlSafeWrap = tool.querySelector<HTMLElement>('#text-urlsafe-wrap');
 
   let timer: number | undefined;
 
@@ -494,7 +496,7 @@ function initTextMode(tool: HTMLElement): void {
     let out: string;
 
     if (dir === 'encode') {
-      out = encodeBytesToBase64(utf8ToBytes(val));
+      out = encodeBytesToBase64(utf8ToBytes(val), { urlSafe: urlSafeBox?.checked ?? false });
     } else {
       const n = normalizeBase64Input(val);
       const v = validateBase64(n.normalized);
@@ -531,8 +533,13 @@ function initTextMode(tool: HTMLElement): void {
     window.clearTimeout(timer);
     timer = window.setTimeout(run, 200);
   });
+  urlSafeBox?.addEventListener('change', run);
   tool.querySelectorAll<HTMLInputElement>('input[name="text-dir"]').forEach((r) =>
-    r.addEventListener('change', run)
+    r.addEventListener('change', () => {
+      // URL-safe 只对编码方向有意义：解码那边本来就能自动吃下 URL-safe 字符
+      if (urlSafeWrap) urlSafeWrap.hidden = r.value === 'decode';
+      run();
+    })
   );
 }
 

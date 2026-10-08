@@ -60,6 +60,13 @@ describe('page registry consistency', () => {
     expect(contentPages.length).toBeGreaterThanOrEqual(14);
   });
 
+  it('导航里当前页有高亮（active + aria-current），其他页没有', () => {
+    const shell = renderShell('base64-to-file');
+    expect(shell).toContain('href="/base64-to-file/" class="active" aria-current="page"');
+    expect(shell.split('aria-current="page"').length - 1, '只该有一个当前页').toBe(1);
+    expect(renderShell('home')).not.toContain('aria-current="page"');
+  });
+
   it('每个页面都有真实的 updated 日期（sitemap lastmod 用，防止每次构建都刷新）', () => {
     for (const p of pages) {
       expect((p as { updated?: string }).updated, `缺少 updated: ${p.id}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);

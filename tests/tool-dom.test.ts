@@ -172,6 +172,32 @@ describe('tool DOM interaction', () => {
     expect(result?.textContent).toContain('PNG');
   });
 
+  it('文本模式的 URL-safe 输出把 + / 换成 - _ 并去掉填充', async () => {
+    await import('../src/tool');
+
+    const tool = document.querySelector<HTMLElement>('#tool');
+    tool?.querySelector<HTMLButtonElement>('.mode-tab[data-mode="text"]')?.click();
+
+    const input = document.querySelector<HTMLTextAreaElement>('#text-input');
+    input!.value = '测试字符串'; // UTF-8 标准 base64 = 5rWL6K+V5a2X56ym5Liy（含 +）
+    input!.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 350));
+
+    const out1 = document.querySelector('#text-output')?.textContent ?? '';
+    expect(out1).toContain('+');
+
+    const box = document.querySelector<HTMLInputElement>('#opt-text-urlsafe');
+    expect(box, '缺少 URL-safe 开关').toBeTruthy();
+    box!.checked = true;
+    box!.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 350));
+
+    const out2 = document.querySelector('#text-output')?.textContent ?? '';
+    expect(out2).not.toContain('+');
+    expect(out2).not.toContain('/');
+    expect(out2).toContain('-');
+  });
+
   it('encodes text in text mode', async () => {
     await import('../src/tool');
 

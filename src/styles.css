@@ -142,6 +142,7 @@ a:hover { text-decoration: underline; }
 
 .nav-links a { color: var(--muted); font-size: 13px; }
 .nav-links a:hover { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent); }
+.nav-links a.active { color: var(--accent); border-bottom: 1px solid var(--accent); }
 
 .nav-side { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 
@@ -745,8 +746,21 @@ details[open] p { animation: fadeIn 0.25s ease both; }
 /* ---------- responsive ---------- */
 
 @media (max-width: 640px) {
-  .nav { flex-wrap: wrap; gap: 10px; }
-  .nav-links { order: 3; width: 100%; font-size: 12px; }
+  .nav { flex-wrap: nowrap; gap: 10px; padding: 11px 14px; }
+  /* 一行横向滚动，不再折成两行（折行会吃掉首屏一大块高度） */
+  .nav-links {
+    order: 0;
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0 14px;
+    font-size: 12px;
+    scrollbar-width: none;
+  }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-links a { white-space: nowrap; }
   .local-chip { display: none; }
 
   .mode-tab { font-size: 12px; padding: 9px 8px; }
