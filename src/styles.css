@@ -310,10 +310,20 @@ main {
   border: 1px solid var(--border-strong);
   background: var(--bg);
   color: var(--ink);
+  caret-color: var(--accent);
   font-family: var(--mono);
   font-size: 13px;
+  line-height: 1.75;
   padding: 12px 14px;
   resize: vertical;
+}
+
+.mono-input::placeholder { color: var(--subtle); }
+
+/* 暗色下输入区用"终端底色"，比卡片更深，边界更清楚 */
+:root[data-theme='dark'] .mono-input {
+  background: var(--term-bg);
+  border-color: #46433f;
 }
 
 .mono-input:focus {
@@ -942,11 +952,12 @@ summary::after { transition: transform 0.12s steps(2); }
 .quick-list li { padding-left: 18px; position: relative; }
 .quick-list li::before { content: '❯'; position: absolute; left: 0; color: var(--accent); }
 
-/* ---------- 宽屏并排对比：输入在左，诊断/结果在右 ---------- */
+/* ---------- 宽屏并排对比：有结果了才分两栏，空状态下输入框铺满整行 ---------- */
 
 @media (min-width: 1000px) {
-  .mode-panel[data-panel='to-file']:not([hidden]),
-  .mode-panel[data-panel='text']:not([hidden]) {
+  /* 关键：右栏真有内容时才并排（否则输入框会被挤成又窄又高的竖条） */
+  .mode-panel[data-panel='to-file']:not([hidden]):has(> #b64-diagnosis:not([hidden])),
+  .mode-panel[data-panel='text']:not([hidden]):has(> #text-output:not([hidden])) {
     display: grid;
     /* 输入是主操作，给它多一点宽度 */
     grid-template-columns: 1.16fr 1fr;
@@ -967,13 +978,12 @@ summary::after { transition: transform 0.12s steps(2); }
   .mode-panel[data-panel='text'] > #text-output { grid-column: 2; grid-row: 2 / 4; }
 
   /* 右栏原本各自带 14px 上边距（堆叠时的间距），并排时会把右栏压低，清零 */
-  .mode-panel[data-panel='to-file'] > #b64-diagnosis,
-  .mode-panel[data-panel='to-file'] > #b64-result,
+  .mode-panel > #b64-diagnosis,
+  .mode-panel > #b64-result,
   .mode-panel[data-panel='text'] > #text-output { margin-top: 0; }
 
-  /* 两栏高度对齐，方便左右对照 */
-  .mode-panel[data-panel='to-file'] > #b64-input,
-  .mode-panel[data-panel='text'] > #text-input { min-height: 300px; }
-
-  .mode-panel[data-panel='text'] > #text-output .text-out { min-height: 300px; }
+  /* 只有并排时才需要拉高对齐；空状态铺满整行，用默认高度更像正常粘贴框 */
+  .mode-panel[data-panel='to-file']:has(> #b64-diagnosis:not([hidden])) > #b64-input,
+  .mode-panel[data-panel='text']:has(> #text-output:not([hidden])) > #text-input,
+  .mode-panel[data-panel='text']:has(> #text-output:not([hidden])) > #text-output .text-out { min-height: 300px; }
 }

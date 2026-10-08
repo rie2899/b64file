@@ -832,7 +832,7 @@ function toolCard(page: PageId): string {
 
       <div class="mode-panel" data-panel="to-file">
         <textarea id="b64-input" class="mono-input" rows="6" spellcheck="false" aria-label="粘贴 Base64 或文件数据"
-          placeholder="贴什么都行——纯 Base64、data:image/png;base64,... 开头的，或者整段接口吐出来的 JSON"></textarea>
+          placeholder="粘贴 Base64、data: 开头的一段、或整段接口 JSON"></textarea>
         <div class="input-actions">
           <button id="b64-sample" class="ghost-btn" type="button">载入示例</button>
           <button id="b64-load-file" class="ghost-btn" type="button">导入 .txt / .b64</button>
