@@ -1,0 +1,72 @@
+import { describe, expect, it } from 'vitest';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import registry from '../page-registry.json';
+import { canonicalTag, metaTags, pageData, renderShell } from '../src/static-pages';
+
+const root = process.cwd();
+const pages = registry as Array<{
+  id: string;
+  path: string;
+  html: string;
+  input: string;
+  priority: string;
+  hide?: boolean;
+}>;
+
+// 404 这类隐藏页没有内容区块，也没有 canonical —— 一致性检查只针对对外的内容页
+const contentPages = pages.filter((page) => !page.hide);
+
+describe('page registry consistency', () => {
+  it('每个 registry 页面都有完整 pageData', () => {
+    for (const p of pages) {
+      const d = pageData[p.id];
+      expect(d, `缺少 pageData: ${p.id}`).toBeTruthy();
+      for (const k of ['title', 'desc', 'h1', 'answer'] as const) {
+        expect(d[k] && d[k].length, `${p.id}.${k} 为空`).toBeGreaterThan(0);
+      }
+      if (!p.hide) {
+        expect(d.sections.length, `${p.id} 没有 sections`).toBeGreaterThan(0);
+        expect(d.faqs.length, `${p.id} 没有 faqs`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('每个 registry 页面都有物理 HTML 壳，且 data-page 与 id 一致', () => {
+    for (const p of pages) {
+      const f = resolve(root, p.html);
+      expect(existsSync(f), `缺少壳文件: ${p.html}`).toBe(true);
+      expect(readFileSync(f, 'utf8'), `${p.html} 的 data-page 应为 ${p.id}`).toContain(
+        `data-page="${p.id}"`
+      );
+    }
+  });
+
+  it('每页都能渲染出标题、描述和 canonical，且没有 undefined 泄漏', () => {
+    for (const p of pages) {
+      const shell = renderShell(p.id);
+      expect(shell, `${p.id} 渲染无 h1`).toContain('<h1>');
+      expect(shell, `${p.id} 渲染出 undefined`).not.toContain('undefined');
+      expect(metaTags(p.id), `${p.id} 缺 title`).toContain('<title>');
+      expect(metaTags(p.id), `${p.id} 缺 description`).toContain('name="description"');
+      if (!p.hide) {
+        expect(canonicalTag(p.id), `${p.id} 缺 canonical`).toContain('rel="canonical"');
+      }
+    }
+  });
+
+  it('对外内容页数量与 registry 一致（隐藏页除外）', () => {
+    expect(contentPages.length).toBe(pages.length - 1);
+    expect(contentPages.length).toBeGreaterThanOrEqual(14);
+  });
+
+  it('pageData 没有孤儿键，mode 取值合法', () => {
+    const ids = new Set(pages.map((p) => p.id));
+    for (const key of Object.keys(pageData)) {
+      expect(ids.has(key), `pageData 里的 ${key} 不在 registry`).toBe(true);
+    }
+    for (const p of pages) {
+      expect(['to-file', 'to-base64', 'text']).toContain(pageData[p.id].mode);
+    }
+  });
+});

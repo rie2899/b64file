@@ -20,6 +20,8 @@ interface PageContent {
   h1: string;
   answer: string;
   mode: ToolMode;
+  /** 文本模式下默认的转换方向（默认 encode） */
+  textDir?: 'encode' | 'decode';
   sections: Section[];
   faqs: Faq[];
 }
@@ -28,7 +30,7 @@ export const pagePaths: Record<PageId, string> = Object.fromEntries(
   pageRegistry.map((p) => [p.id, p.path])
 );
 
-const pageData: Record<PageId, PageContent> = {
+export const pageData: Record<PageId, PageContent> = {
   home: {
     title: 'Base64 转文件 · 文件转 Base64 · 在线编解码工具 - b64file',
     desc: '免费在线 Base64 工具：文件转 Base64、Base64 转文件、文本编解码一站搞定。自动修复前缀和填充符问题，全程浏览器本地跑，文件不上传。',
@@ -355,6 +357,111 @@ const pageData: Record<PageId, PageContent> = {
       { q: 'JSON 数据会被上传吗？', a: '不会，解析和提取全部在你浏览器里跑完。' }
     ]
   },
+  'base64-to-text': {
+    title: 'Base64 转文本 / 中文解码在线工具 - 乱码怎么解 - b64file',
+    desc: '把 Base64 解成中文和文本：贴进来直接出原文，URL-safe、缺失填充符、复制的换行、Data URL 前缀都能自动处理。全程浏览器本地跑，不上传。',
+    h1: 'Base64 转文本 · 中文解码',
+    answer:
+      '一段 Base64，想知道它写的是什么？贴进来，方向选「Base64 → 文本」，原文立刻出来。URL-safe 的 - _、丢掉的 =、复制时带进来的换行，都替你理顺了，解出来对不对一眼就能看见。',
+    mode: 'text',
+    textDir: 'decode',
+    sections: [
+      {
+        h2: '怎么用：两步',
+        html: `<ol class="steps">
+          <li><strong>切到「文本编解码」</strong> — 方向选 Base64 → 文本（进这个页面已经默认选好了）</li>
+          <li><strong>贴进去</strong> — 原文立刻出来，中文、emoji 都在</li>
+        </ol>`
+      },
+      {
+        h2: '解出来是乱码，通常是这三种情况',
+        html: `<ul>
+          <li><strong>内容被截断了</strong> — 复制的时候少了一段。工具会直接告诉你：长度不是 4 的倍数、或者含非法字符</li>
+          <li><strong>被 URL 编码过一遍</strong> — 从网址、日志里复制出来的常带 <code>%3D</code>、<code>%2B</code> 这类转义，工具会先还原再解</li>
+          <li><strong>原文不是 UTF-8</strong> — 老系统常用 GBK 编码，本工具按 UTF-8 解码，这种情况会显示乱码，得先把原文转成 UTF-8 再来</li>
+        </ul>`
+      },
+      {
+        h2: '一般在哪见到这些 Base64',
+        html: `<p>接口返回的字段、后端日志里的报文、二维码扫出来的内容、JWT 中间那一段、邮件源码里的附件——基本都是同一件事：二进制或文本被编成了纯 ASCII 字符，方便塞进只能传文本的地方。</p>`
+      }
+    ],
+    faqs: [
+      { q: '中文解出来是问号或方块？', a: '说明原文不是 UTF-8 编码（GBK 最常见）。本工具按 UTF-8 解，这种情况需要先把原文转成 UTF-8；如果只是末尾一小段乱码，多半是复制时被截断了。' },
+      { q: '能反过来把中文编成 Base64 吗？', a: '能。同一个面板把方向切成「文本 → Base64」，中文和 emoji 都按 UTF-8 编码。' },
+      { q: '解出来看着像文件而不是文字？', a: '那说明这段 Base64 存的是文件——图片、PDF、文档都可能。用「Base64 转文件」更合适，它能认出类型并直接给你下载。' },
+      { q: '有长度限制吗？', a: '文本模式适合中等长度的字符串。几 MB 以上的内容走文件模式（Base64 转文件），那边有后台线程处理，不会把页面卡死。' }
+    ]
+  },
+  'base64-to-pptx': {
+    title: 'Base64 转 PPTX（PowerPoint）在线工具 - 演示文稿还原 - b64file',
+    desc: '粘贴 Base64 自动识别 pptx 并还原成 PowerPoint 文件下载。接口返回的演示文稿、课件、方案数据一键落地，本地处理不上传。',
+    h1: 'Base64 转 PPTX（PowerPoint）在线工具',
+    answer:
+      '接口里返回一坨 Base64，要的是 PPT？贴进来。工具解出字节流后看文件头，认出 pptx 就把 .pptx 还给你——扩展名改成 .zip 也骗不过它。全程不出浏览器。',
+    mode: 'to-file',
+    sections: [
+      {
+        h2: '适用场景',
+        html: `<ul>
+          <li><strong>接口返回 PPT 附件</strong> — OA、培训系统、投标平台把 pptx 编成 Base64 塞在 JSON 里返回</li>
+          <li><strong>课件 / 方案落地</strong> — 从接口数据里把演示文稿还原成真正的 .pptx 文件</li>
+          <li><strong>不挑来源格式</strong> — 纯 Base64、data URL 前缀、整段接口返回的 JSON 都能直接贴</li>
+        </ul>`
+      },
+      {
+        h2: 'pptx 是怎么认出来的',
+        html: `<p>pptx 本质是个 ZIP 包：包头有 <code>PK</code> 标记，内部带 <code>ppt/</code> 目录。工具解出字节流后检查这两处，所以扩展名改成什么都骗不过它。识别结果卡片会标「PowerPoint 演示（pptx）」，文件名也按识别结果自动配好 <code>.pptx</code> 后缀。</p>`
+      },
+      {
+        h2: '老版本 .ppt 怎么办',
+        html: `<p>97-2003 的老 .ppt 不是 ZIP 结构，识别会落到「认不出的二进制文件」——但解码本身不受影响，直接下载后把扩展名改成 <code>.ppt</code> 照样能打开。新版 Office 和 WPS 都认。</p>`
+      }
+    ],
+    faqs: [
+      { q: '能转成 PDF 或图片吗？', a: '不能。工具只负责把 Base64 还原成原始文件，格式转换是另一回事。' },
+      { q: '文件会被上传吗？', a: '不会，识别和解码全部在浏览器里完成，没有上传接口。' },
+      { q: 'WPS 打得开吗？', a: '能。还原的是原始 pptx 文件，Office 和 WPS 都认。' }
+    ]
+  },
+  base64url: {
+    title: 'Base64URL / URL-safe Base64 在线转换（含 JWT） - b64file',
+    desc: 'URL-safe Base64（Base64URL）编解码：+ / 换成 - _、去掉填充 =，能安全放进 URL 参数、文件名和 JWT。贴进来自动识别并还原。',
+    h1: 'Base64URL · URL-safe Base64 转换',
+    answer:
+      '标准 Base64 里的 + / 和 = 一进了 URL 就会被转义，进了文件名就是非法字符，于是有了 URL-safe 版本：用 - _ 代替，去掉填充。本工具解码时自动认这两种写法，不用你手动替换；要输出 URL-safe，在文件模式的选项里勾一下。',
+    mode: 'text',
+    textDir: 'decode',
+    sections: [
+      {
+        h2: '和标准 Base64 只差三个字符',
+        html: `<ul>
+          <li><strong>+ 换成 -</strong> — 加号在 URL 里会被当成空格</li>
+          <li><strong>/ 换成 _</strong> — 斜杠在 URL 和文件名里是分隔符</li>
+          <li><strong>= 直接去掉</strong> — 填充符，解码时能算出来，URL-safe 版本不写</li>
+        </ul>`
+      },
+      {
+        h2: '什么时候必须用它',
+        html: `<ul>
+          <li><strong>URL 参数和短链</strong> — 把一段数据塞进查询串，标准 Base64 会被转义得面目全非</li>
+          <li><strong>JWT</strong> — header 和 payload 都是 base64url，三段用点连起来</li>
+          <li><strong>Cookie 和 HTTP 头</strong> — 只允许安全字符，加号斜杠都是雷</li>
+          <li><strong>文件名</strong> — 斜杠不能进文件名，这是硬规矩</li>
+        </ul>`
+      },
+      {
+        h2: '解码不用手动改',
+        html: `<p>把 URL-safe 的字符串直接贴进「Base64 → 文本」就行：<code>-</code> 和 <code>_</code> 会自动还原成 <code>+</code> 和 <code>/</code>，缺掉的 <code>=</code> 自动补齐。反过来要生成 URL-safe，切到「文件转 Base64」勾上 URL-safe 选项即可。</p>`
+      }
+    ],
+    faqs: [
+      { q: 'JWT 里那段能直接解吗？', a: '能。把中间的 payload 段复制出来贴到「Base64 → 文本」，就能看到原始 JSON。提醒一句：JWT 的 payload 只是编码不是加密，谁拿到都能看，别往里放敏感信息。' },
+      { q: '编码时怎么输出 URL-safe？', a: '「文件转 Base64」面板里有 URL-safe 勾选项，勾上后输出的就是 - _ 且不带填充的版本。' },
+      { q: '为什么有的 Base64 结尾没有等号？', a: '等号是填充符，作用是让长度凑成 4 的倍数。URL-safe 版本默认去掉它，解码时补回来即可——本工具会自动补，不用你管。' },
+      { q: '这两种写法能混着用吗？', a: '最好别。同一份数据要么全标准要么全 URL-safe。混用虽然能解，但复制进 URL 照样会出问题。' }
+    ]
+  },
   privacy: {
     title: '隐私政策 - b64file',
     desc: 'b64file 隐私政策：所有文件转换均在浏览器本地完成，文件内容不上传、不存储、不记录。',
@@ -417,7 +524,7 @@ const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '技术实现',
-        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 RFC 4648 标准；全部逻辑跑着 74 项自动化测试。不放心的话，打开开发者工具的 Network 面板看看——没有一个数据请求。</p>'
+        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 RFC 4648 标准；全部逻辑跑着 80 项自动化测试。不放心的话，打开开发者工具的 Network 面板看看——没有一个数据请求。</p>'
       },
       {
         h2: '反馈与建议',
@@ -590,8 +697,8 @@ function toolCard(page: PageId): string {
 
       <div class="mode-panel" data-panel="text" hidden>
         <div class="text-direction">
-          <label><input type="radio" name="text-dir" value="encode" checked /> 文本 → Base64</label>
-          <label><input type="radio" name="text-dir" value="decode" /> Base64 → 文本</label>
+          <label><input type="radio" name="text-dir" value="encode"${d.textDir === 'decode' ? '' : ' checked'} /> 文本 → Base64</label>
+          <label><input type="radio" name="text-dir" value="decode"${d.textDir === 'decode' ? ' checked' : ''} /> Base64 → 文本</label>
         </div>
         <textarea id="text-input" class="mono-input" rows="4" spellcheck="false"
           placeholder="输入文本或 Base64，方向在上面切换"></textarea>
@@ -643,7 +750,7 @@ function footer(): string {
         <strong>b64file</strong>
       </div>
       <p class="footer-tagline">由爱而生 · 数据不出浏览器 · 免费无广告</p>
-      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">local · rfc4648 · 74 tests · 0 trackers</span></div>
+      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">local · rfc4648 · 80 tests · 0 trackers</span></div>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>

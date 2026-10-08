@@ -9,6 +9,9 @@ https://b64file.cn/base64-decode-errors/
 https://b64file.cn/json-to-file/
 https://b64file.cn/base64-to-word/
 https://b64file.cn/base64-to-excel/
+https://b64file.cn/base64url/
+https://b64file.cn/base64-to-pptx/
+https://b64file.cn/base64-to-text/
 https://b64file.cn/privacy/
 https://b64file.cn/about/
 https://b64file.cn/terms/

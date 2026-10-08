@@ -245,4 +245,19 @@ describe('tool DOM interaction', () => {
     expect(ctx?.textContent).toContain('Zm9vYmFy');
     expect(ctx?.querySelector('strong')?.textContent).toBe('$');
   });
+
+  it('文本模式按页面预设方向：base64-to-text / base64url 默认解码，其他页面默认编码', () => {
+    document.body.dataset.page = 'base64-to-text';
+    document.body.innerHTML = `<div id="app">${renderShell('base64-to-text')}</div>`;
+    expect(document.querySelector<HTMLInputElement>('input[name="text-dir"]:checked')?.value).toBe('decode');
+    expect(document.querySelector('#tool')?.getAttribute('data-default-mode')).toBe('text');
+
+    document.body.dataset.page = 'base64url';
+    document.body.innerHTML = `<div id="app">${renderShell('base64url')}</div>`;
+    expect(document.querySelector<HTMLInputElement>('input[name="text-dir"]:checked')?.value).toBe('decode');
+
+    document.body.dataset.page = 'home';
+    document.body.innerHTML = `<div id="app">${renderShell('home')}</div>`;
+    expect(document.querySelector<HTMLInputElement>('input[name="text-dir"]:checked')?.value).toBe('encode');
+  });
 });
