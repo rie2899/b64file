@@ -1,0 +1,21 @@
+# b64file nginx 访问日志轮转 —— 公安备案要求网络日志留存不少于 180 天
+# 部署位置：服务器 /etc/logrotate.d/b64file-nginx
+# 日志目录：/data/b64file/logs（compose 里以 ./logs:/var/log/nginx 挂进容器）
+#
+# 用 copytruncate：nginx 在容器里持续持有文件句柄，logrotate 无法给它发信号重开日志，
+# 所以采用"复制一份 + 截断原文件"的方式（代价是切换瞬间可能丢几行，可接受）。
+# dateext + dateformat 让轮转文件名带日期（access.log-20261009.gz），
+# 核查时一眼能看出留存了哪些天。
+
+/data/b64file/logs/*.log {
+    daily
+    rotate 180
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    dateext
+    dateformat -%Y%m%d
+    su root root
+}

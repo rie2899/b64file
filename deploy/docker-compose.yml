@@ -10,3 +10,12 @@ services:
       - ./html:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./certs:/etc/nginx/certs:ro
+      # 访问日志落盘到宿主机，由 /etc/logrotate.d/b64file-nginx 按天轮转、保留 180 天
+      # （《网络安全法》第 21 条：网络日志留存不少于 6 个月；公安备案通过后的日常要求）
+      - ./logs:/var/log/nginx
+    # 容器自身的 stdout/stderr 副本也设上限，避免 json.log 无限增长
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
