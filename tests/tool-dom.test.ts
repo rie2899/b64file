@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderShell } from '../src/static-pages';
+import { ICP_NUMBER, POLICE_RECORD_NUMBER, POLICE_RECORD_URL } from '../src/site-config';
 import { encodeBytesToBase64, utf8ToBytes } from '../src/lib/base64';
 
 describe('tool DOM interaction', () => {
@@ -167,6 +168,10 @@ describe('tool DOM interaction', () => {
     expect(footer).toContain(`© ${new Date().getFullYear()}`);
     expect(footer).toContain('/about/');
     expect(footer).toContain('/terms/');
+    // 备案信息：ICP + 公安备案（公安备案号必须链到官方查询页，2026-10-09 通过）
+    expect(footer).toContain(ICP_NUMBER);
+    expect(footer).toContain(POLICE_RECORD_NUMBER);
+    expect(footer).toContain(POLICE_RECORD_URL);
   });
 
   it('home schema has no breadcrumb while subpages do', () => {

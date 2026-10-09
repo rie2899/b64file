@@ -1,5 +1,5 @@
 import pageRegistry from '../page-registry.json';
-import { DEFAULT_SITE_URL, FEEDBACK_EMAIL, ICP_NUMBER } from './site-config';
+import { DEFAULT_SITE_URL, FEEDBACK_EMAIL, ICP_NUMBER, POLICE_RECORD_NUMBER, POLICE_RECORD_URL } from './site-config';
 
 export type PageId = string;
 export type ToolMode = 'to-file' | 'to-base64' | 'text';
@@ -1047,7 +1047,11 @@ function footer(): string {
         <a href="mailto:${FEEDBACK_EMAIL}">反馈 ${FEEDBACK_EMAIL}</a>
       </div>
       <p class="muted">© ${year} b64file.cn · Base64 只是编码，不是加密，别拿它保护敏感数据</p>
-      ${ICP_NUMBER ? `<p><a class="muted" href="https://beian.miit.gov.cn/" rel="noopener nofollow" target="_blank">${ICP_NUMBER}</a></p>` : ''}
+      ${ICP_NUMBER || POLICE_RECORD_NUMBER ? `<p class="footer-filings">
+        ${ICP_NUMBER ? `<a class="muted" href="https://beian.miit.gov.cn/" rel="noopener nofollow" target="_blank">${ICP_NUMBER}</a>` : ''}
+        ${ICP_NUMBER && POLICE_RECORD_NUMBER ? '<span class="muted"> · </span>' : ''}
+        ${POLICE_RECORD_NUMBER ? `<a class="muted" href="${POLICE_RECORD_URL}" rel="noopener nofollow" target="_blank">${POLICE_RECORD_NUMBER}</a>` : ''}
+      </p>` : ''}
     </footer>
   `;
 }

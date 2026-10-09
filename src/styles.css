@@ -987,3 +987,6 @@ summary::after { transition: transform 0.12s steps(2); }
   .mode-panel[data-panel='text']:has(> #text-output:not([hidden])) > #text-input,
   .mode-panel[data-panel='text']:has(> #text-output:not([hidden])) > #text-output .text-out { min-height: 300px; }
 }
+
+/* 页脚备案行：ICP + 公安备案，同一行、窄屏可换行 */
+.footer-filings { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 2px; }
