@@ -10,7 +10,9 @@ const today = new Date().toISOString().slice(0, 10); // 仅作兜底
 
 writeFileSync(
   'public/robots.txt',
-  `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`
+  // baidu-urls.txt 是给百度主动推送 API 读的清单，不是内容页 —— 让引擎别把它当薄内容收进去。
+  // （llms.txt 保持可抓，那是给 AI 检索用的入口。）
+  `User-agent: *\nAllow: /\nDisallow: /baidu-urls.txt\n\nSitemap: ${siteUrl}/sitemap.xml\n`
 );
 
 writeFileSync(

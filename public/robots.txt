@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /baidu-urls.txt
 
 Sitemap: https://b64file.cn/sitemap.xml

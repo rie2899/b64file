@@ -675,7 +675,7 @@ export const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '技术实现',
-        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 <a href="https://www.rfc-editor.org/rfc/rfc4648" target="_blank" rel="noopener">RFC 4648</a> 标准；全部逻辑跑着 90 项自动化测试。</p>'
+        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 <a href="https://www.rfc-editor.org/rfc/rfc4648" target="_blank" rel="noopener">RFC 4648</a> 标准；全部逻辑跑着 91 项自动化测试。</p>'
       },
       {
         h2: '反馈与建议',
@@ -1031,7 +1031,7 @@ function footer(): string {
         <strong>b64file</strong>
       </div>
       <p class="footer-tagline">由爱而生 · 免费 · 无账号 · 无广告</p>
-      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 90 tests</span></div>
+      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 91 tests</span></div>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>

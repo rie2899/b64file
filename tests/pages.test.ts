@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import registry from '../page-registry.json';
 import { canonicalTag, metaTags, pageData, renderShell } from '../src/static-pages';
@@ -64,6 +64,16 @@ describe('page registry consistency', () => {
     const shell = renderShell('home');
     expect(shell).toContain('aria-label="粘贴 Base64 或文件数据"');
     expect(shell).toContain('aria-label="输入文本或 Base64"');
+  });
+
+  it('IndexNow key 文件存在且格式合法（必应即时收录靠它）', () => {
+    // 构建产物 robots.txt / baidu-urls.txt 也在 public/ 里，而且 baidu-urls 恰好满足
+    // IndexNow 的 [A-Za-z0-9-]{8,128} 字符集 —— 所以按我们实际生成的 32 位十六进制来认。
+    const keys = readdirSync(resolve(root, 'public')).filter((f) => /^[0-9a-f]{32}\.txt$/.test(f));
+    expect(keys.length, 'public/ 下应有且只有一个 <key>.txt').toBe(1);
+    const name = keys[0].replace(/\.txt$/, '');
+    const content = readFileSync(resolve(root, 'public', keys[0]), 'utf8').trim();
+    expect(content, 'key 文件内容必须等于文件名，否则必应校验不过').toBe(name);
   });
 
   it('内链图：每页出链 ≤5，且每个对外页面都有 ≥5 条入链', () => {
