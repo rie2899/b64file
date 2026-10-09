@@ -66,6 +66,39 @@ describe('page registry consistency', () => {
     expect(shell).toContain('aria-label="输入文本或 Base64"');
   });
 
+  it('内链图：每页出链 ≤5，且每个对外页面都有 ≥5 条入链', () => {
+    const pathToId = new Map(contentPages.map((p) => [p.path, p.id]));
+    const outbound = new Map<string, string[]>();
+
+    for (const p of contentPages) {
+      const shell = renderShell(p.id);
+      const start = shell.indexOf('相关工具与指南');
+      const end = shell.indexOf('</section>', start);
+      const seg = shell.slice(start, end > start ? end : undefined);
+      const hrefs = [...seg.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+      outbound.set(p.id, hrefs);
+    }
+
+    for (const [id, hrefs] of outbound) {
+      expect(hrefs.length, `${id} 的相关链接为空`).toBeGreaterThan(0);
+      expect(hrefs.length, `${id} 相关链接超过 5 条（像链接农场）`).toBeLessThanOrEqual(5);
+      expect(new Set(hrefs).size, `${id} 相关链接有重复`).toBe(hrefs.length);
+    }
+
+    const inbound = new Map<string, number>();
+    for (const hrefs of outbound.values()) {
+      for (const h of hrefs) {
+        const id = pathToId.get(h);
+        if (id) inbound.set(id, (inbound.get(id) ?? 0) + 1);
+      }
+    }
+
+    for (const p of contentPages) {
+      const n = inbound.get(p.id) ?? 0;
+      expect(n, `${p.id} 只有 ${n} 条内链指向它，应 ≥5`).toBeGreaterThanOrEqual(5);
+    }
+  });
+
   it('有 quick 的页面渲染出首屏速查清单，没有的不渲染', () => {
     const shell = renderShell('base64-decode-errors');
     expect(shell).toContain('class="quick-list"');

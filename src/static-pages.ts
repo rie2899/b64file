@@ -432,8 +432,8 @@ export const pageData: Record<PageId, PageContent> = {
     ]
   },
   base64url: {
-    title: 'Base64URL / URL-safe Base64 在线转换（含 JWT） - b64file',
-    desc: 'URL-safe Base64（Base64URL）编解码：+ / 换成 - _、去掉填充 =，能安全放进 URL 参数、文件名和 JWT。贴进来自动识别并还原。',
+    title: 'Base64URL / URL-safe Base64 在线转换 - b64file',
+    desc: 'URL-safe Base64（Base64URL）编解码：+ / 换成 - _、去掉填充 =，能安全放进 URL 参数、文件名；JWT 的三段用的就是它。贴进来自动识别并还原。',
     h1: 'Base64URL · URL-safe Base64 转换',
     answer:
       '标准 Base64 里的 + / 和 = 一进了 URL 就会被转义，进了文件名就是非法字符，于是有了 URL-safe 版本：用 - _ 代替，去掉填充。本工具解码时自动认这两种写法，不用你手动替换；要输出 URL-safe，在文件模式的选项里勾一下。',
@@ -452,7 +452,7 @@ export const pageData: Record<PageId, PageContent> = {
         h2: '什么时候必须用它',
         html: `<ul>
           <li><strong>URL 参数和短链</strong> — 把一段数据塞进查询串，标准 Base64 会被转义得面目全非</li>
-          <li><strong>JWT</strong> — header 和 payload 都是 base64url，三段用点连起来</li>
+          <li><strong>JWT</strong> — header 和 payload 都是 base64url，三段用点连起来（要看某个 token 里写了什么，用 <a href="/jwt-decode/">JWT 解码</a>）</li>
           <li><strong>Cookie 和 HTTP 头</strong> — 只允许安全字符，加号斜杠都是雷</li>
           <li><strong>文件名</strong> — 斜杠不能进文件名，这是硬规矩</li>
         </ul>`
@@ -463,7 +463,7 @@ export const pageData: Record<PageId, PageContent> = {
       }
     ],
     faqs: [
-      { q: 'JWT 里那段能直接解吗？', a: '能。把中间的 payload 段复制出来贴到「Base64 → 文本」，就能看到原始 JSON。提醒一句：JWT 的 payload 只是编码不是加密，谁拿到都能看，别往里放敏感信息。' },
+      { q: 'JWT 里那段能直接解吗？', a: '能，不过有专门的 <a href="/jwt-decode/">JWT 解码</a>：整条 token 粘进去，header 和 payload 一起解出来。提醒一句：JWT 的 payload 只是编码不是加密，谁拿到都能看，别往里放敏感信息。' },
       { q: '编码时怎么输出 URL-safe？', a: '「文件转 Base64」面板里有 URL-safe 勾选项，勾上后输出的就是 - _ 且不带填充的版本。' },
       { q: '为什么有的 Base64 结尾没有等号？', a: '等号是填充符，作用是让长度凑成 4 的倍数。URL-safe 版本默认去掉它，解码时补回来即可——本工具会自动补，不用你管。' },
       { q: '这两种写法能混着用吗？', a: '最好别。同一份数据要么全标准要么全 URL-safe。混用虽然能解，但复制进 URL 照样会出问题。' }
@@ -598,7 +598,7 @@ export const pageData: Record<PageId, PageContent> = {
     sections: [
       {
         h2: '三段分别是什么',
-        html: '<ul><li><strong>header</strong>：算法和类型，比如 <code>{"alg":"HS256","typ":"JWT"}</code></li><li><strong>payload</strong>：真正的内容 —— 用户 ID、权限、签发时间 <code>iat</code>、过期时间 <code>exp</code></li><li><strong>signature</strong>：用密钥对前两段算出来的签名，<strong>不是数据，解不出东西</strong></li></ul>'
+        html: '<ul><li><strong>header</strong>：算法和类型，比如 <code>{"alg":"HS256","typ":"JWT"}</code></li><li><strong>payload</strong>：真正的内容 —— 用户 ID、权限、签发时间 <code>iat</code>、过期时间 <code>exp</code></li><li><strong>signature</strong>：用密钥对前两段算出来的签名，<strong>不是数据，解不出东西</strong></li></ul><p>另外：JWT 用的编码是 URL-safe 版（<code>-_</code> 取代 <code>+/</code>），细节见 <a href="/base64url/">Base64URL</a>。</p><ul></ul>'
       },
       {
         h2: '看得见 ≠ 可信',
@@ -675,7 +675,7 @@ export const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '技术实现',
-        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 <a href="https://www.rfc-editor.org/rfc/rfc4648" target="_blank" rel="noopener">RFC 4648</a> 标准；全部逻辑跑着 89 项自动化测试。</p>'
+        html: '<p>纯静态页面 + 浏览器本地计算：文件类型靠魔数识别，不看扩展名；Base64 容错遵循 <a href="https://www.rfc-editor.org/rfc/rfc4648" target="_blank" rel="noopener">RFC 4648</a> 标准；全部逻辑跑着 90 项自动化测试。</p>'
       },
       {
         h2: '反馈与建议',
@@ -957,34 +957,60 @@ const GROUP_LABEL: Record<string, string> = {
   encode: '同样是把文件转成 Base64',
   text: '同样是文本编解码',
   guide: '遇到报错看这里',
-  info: '常用工具'
+  info: '常用工具',
+  home: '先看首页'
 };
 
+/**
+ * 相关链接走一条"环"：页面按主题排序成环，每页取环上的后 5 个。
+ * 这样出链固定 ≤5（不会变成链接农场），同时每页恰好被环上前 5 个页面链接到 → 入链恒为 5。
+ * 旧实现是"取组内前 N 个"，排在组尾的页面永远吃不到入链
+ * （jwt-decode / base64url / image-to-base64 / pdf-to-base64 只有 2 条、json-to-file 3 条）。
+ * 不变量由 tests/pages.test.ts 里的"内链图"用例守住。
+ */
+const RELATED_GROUP_ORDER: PageGroup[] = ['decode', 'text', 'encode', 'guide', 'home', 'info'];
+
+const RELATED_RING: string[] = RELATED_GROUP_ORDER.flatMap((gr) =>
+  (pageRegistry as Array<{ id: string; hide?: boolean }>)
+    .filter((p) => !p.hide && (PAGE_GROUP[p.id] ?? 'info') === gr)
+    .map((p) => p.id)
+);
+
 function relatedLinks(currentPage: PageId): string {
-  const all = (pageRegistry as Array<{ id: string; path: string; hide?: boolean }>).filter(
-    (p) => !p.hide && p.id !== currentPage
+  const byId = new Map(
+    (pageRegistry as Array<{ id: string; path: string; hide?: boolean }>)
+      .filter((p) => !p.hide)
+      .map((p) => [p.id, p] as const)
   );
   const g = PAGE_GROUP[currentPage] ?? 'info';
-  const take = (group: PageGroup, n: number) => all.filter((p) => PAGE_GROUP[p.id] === group).slice(0, n);
-  const byId = (id: string) => all.filter((p) => p.id === id);
+  const ring = RELATED_RING;
+  const i = ring.indexOf(currentPage);
 
-  const rows: Array<[string, typeof all]> = [];
-  if (g === 'decode' || g === 'encode' || g === 'text') {
-    rows.push([GROUP_LABEL[g], take(g, 3)]);
-    rows.push(['反过来用', take(g === 'encode' ? 'decode' : 'encode', 1)]);
-    rows.push([GROUP_LABEL.guide, take('guide', 1)]);
-  } else {
-    rows.push([GROUP_LABEL.info, [...byId('base64-to-file'), ...byId('file-to-base64'), ...byId('base64-to-text'), ...byId('base64-decode-errors')]]);
+  const picks: string[] = [];
+  for (let k = 1; picks.length < 5 && k <= ring.length; k += 1) {
+    const id = ring[(i + k) % ring.length];
+    if (id !== currentPage) picks.push(id);
   }
 
+  const labelFor = (tg: PageGroup): string => {
+    if (tg === g) return GROUP_LABEL[g] ?? GROUP_LABEL.info;
+    if ((g === 'decode' && tg === 'encode') || (g === 'encode' && tg === 'decode')) return '反过来用';
+    return GROUP_LABEL[tg] ?? GROUP_LABEL.info;
+  };
+
+  const rows = [g, ...RELATED_GROUP_ORDER.filter((x) => x !== g)]
+    .map((tg) => [labelFor(tg), picks.filter((id) => (PAGE_GROUP[id] ?? 'info') === tg)] as const)
+    .filter(([, items]) => items.length > 0);
+
   const body = rows
-    .filter(([, items]) => items.length > 0)
-    .map(
-      ([label, items]) =>
-        `<div class="related-row"><span class="rg-label">${label}</span><div class="related-links">${items
-          .map((p) => `<a href="${p.path}">${SHORT_LABEL[p.id] ?? p.id}</a>`)
-          .join('')}</div></div>`
-    )
+    .map(([label, items]) => {
+      const out = items
+        .map((id) => byId.get(id))
+        .filter((p): p is { id: string; path: string } => Boolean(p))
+        .map((p) => `<a href="${p.path}">${SHORT_LABEL[p.id] ?? p.id}</a>`)
+        .join('');
+      return `<div class="related-row"><span class="rg-label">${label}</span><div class="related-links">${out}</div></div>`;
+    })
     .join('\n      ');
 
   return `
@@ -995,6 +1021,7 @@ function relatedLinks(currentPage: PageId): string {
   `;
 }
 
+
 function footer(): string {
   const year = new Date().getFullYear();
   return `
@@ -1004,7 +1031,7 @@ function footer(): string {
         <strong>b64file</strong>
       </div>
       <p class="footer-tagline">由爱而生 · 免费 · 无账号 · 无广告</p>
-      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 89 tests</span></div>
+      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 90 tests</span></div>
       <div class="footer-links">
         <a href="/">首页</a>
         <a href="/base64-to-file/">Base64 转文件</a>
