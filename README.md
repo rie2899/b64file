@@ -1,8 +1,9 @@
 # b64file
 
+在线使用：**[b64file.cn](https://b64file.cn)**
+
 Base64 转文件 · 文件转 Base64 · JSON 提取 —— 全部在浏览器本地完成的转换工具。
 
-- 站点：https://b64file.cn
 - 技术栈：Vite + TypeScript，纯静态，无后端、无数据库、无追踪
 - 测试：62+（引擎 / DOM 交互 / 真实数据）
 
