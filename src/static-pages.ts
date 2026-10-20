@@ -615,6 +615,97 @@ export const pageData: Record<PageId, PageContent> = {
       { q: '能验证签名吗？', a: '不能，本站不做验证。验签需要密钥或公钥，属于服务端的事。' }
     ]
   },
+  'base64-to-video': {
+    title: 'Base64 转视频在线工具 - MP4/MOV 还原下载 - b64file',
+    desc: '粘贴 Base64 还原成视频文件下载。按文件头识别 MP4、MOV、AVI、MKV 等格式，接口返回的视频字段也能直接还原。',
+    h1: 'Base64 转视频在线工具',
+    answer:
+      '接口返回的视频、消息平台中转的文件、日志里抓到的一段 Base64——贴进来就能还原成能直接播放的视频。',
+    mode: 'to-file',
+    sections: [
+      {
+        h2: '视频为什么常被塞成 Base64',
+        html: '<p>一个接口要同时返回文字和视频时，二进制没地方放，只能编码进字段；低代码平台、消息机器人在步骤之间传文件也常这么干。所以你拿到的常常是几百 KB 到几十 MB 的字符串，而不是一个能点开的链接。</p>'
+      },
+      {
+        h2: '识别靠文件头，不靠扩展名',
+        html: '<p>MP4 和 MOV 都是 ISO 容器，开头是 <code>ftyp</code> 加品牌标记；MKV 开头是 <code>1A 45 DF A3</code>，AVI 是 <code>RIFF</code> 加 <code>AVI </code>，FLV 是 <code>FLV</code>。工具读开头判断真实格式，扩展名按内容给，不会把 MOV 存成 .mp4。</p>'
+      },
+      {
+        h2: '体积提醒：视频是这里最容易卡的一类',
+        html: '<p>Base64 让体积增加约 <strong>33%</strong>，而视频本来就大：一个 20 MB 的片段，字符串接近 27 MB，浏览器里还要同时持有编码前后两份。短片段没问题，整段长视频建议用命令行处理。</p>'
+      }
+    ],
+    faqs: [
+      { q: '能直接在页面上播放吗？', a: '页面只负责还原文件。下载下来用系统播放器打开更顺畅，也不会因为浏览器解码能力不同出现「能下不能播」。' },
+      { q: '解出来不是 MP4 怎么办？', a: '工具按文件头识别，可能是 MOV、MKV 或 AVI。结果卡片上会写清它认成了什么，扩展名也按识别结果给。' },
+      { q: '超大视频能处理吗？', a: '单次粘贴约 2 亿字符上限。超过这个量级，用 <code>base64 -d</code> 之类的命令行工具更合适。' }
+    ]
+  },
+
+  'base64-to-zip': {
+    title: 'Base64 转 ZIP 压缩包在线工具 - 还原并下载 - b64file',
+    desc: '粘贴 Base64 还原成压缩包下载。按文件头识别 ZIP、RAR、7Z、GZIP，批量导出接口返回的压缩包字段可直接还原。',
+    h1: 'Base64 转 ZIP 压缩包',
+    answer:
+      '批量导出的接口经常把整个压缩包编码成字符串返回，贴进来就能还原成可解压的文件，目录结构和文件名都在里面。',
+    mode: 'to-file',
+    sections: [
+      {
+        h2: '什么时候会遇到',
+        html: '<ul><li><strong>批量导出接口</strong>：一次导出多个文件，服务端打包后按 Base64 返回</li><li><strong>邮件附件</strong>：MIME 把附件编码成 Base64</li><li><strong>备份与迁移</strong>：把整个目录压成一个字符串塞进字段里</li></ul>'
+      },
+      {
+        h2: '四个压缩格式的识别依据',
+        html: '<p>ZIP 开头是 <code>50 4B 03 04</code>；RAR 是 <code>52 61 72 21</code>；7Z 是 <code>37 7A BC AF 27 1C</code>；GZIP 是 <code>1F 8B</code>。工具按这些字节判断，不看文件名。</p>'
+      },
+      {
+        h2: '一个容易误会的地方：Office 文件也是 ZIP',
+        html: '<p>docx、xlsx、pptx 本质都是 ZIP 容器，字节开头同样是 <code>PK</code>。所以工具会先看容器里有没有 <code>word/</code>、<code>xl/</code>、<code>ppt/</code> 目录：能认出具体类型就按那个给，认不出才落到「ZIP 压缩包」。这样不会把 Word 文档存成一个 .zip。</p>'
+      }
+    ],
+    faqs: [
+      { q: '能在线解压吗？', a: '不能。工具只还原压缩包本身，解压交给系统压缩软件——浏览器里解压大包既慢又费内存。' },
+      { q: '解出来打不开？', a: '多半是 Base64 被截断了：数据不完整时解压软件会报「压缩包损坏」。回到源头重新复制完整字符串。' },
+      { q: '支持分卷压缩包吗？', a: '分卷包是多个独立文件，每一卷都要还原出来、按顺序放在同一目录才能解压。工具一次只还原一个文件。' }
+    ]
+  },
+
+  'base64-size-calculator': {
+    title: 'Base64 编码后变大多少 - 体积计算公式与对照表 - b64file',
+    desc: 'Base64 让数据增大约 33%，附精确计算公式（含填充符）、常见文件大小对照表，以及为什么实际感受常常不止 33%。',
+    h1: 'Base64 编码后变大多少',
+    answer:
+      'Base64 用 4 个字符表示 3 个字节，所以体积固定增加约 1/3。精确的字符串长度是 4 × ⌈字节数 ÷ 3⌉——每 3 个字节变成 4 个字符，最后一组不足的用填充符补齐。',
+    mode: 'text',
+    textDir: 'encode',
+    quick: [
+      '字符数 = 4 × ⌈字节数 ÷ 3⌉',
+      '1 MB 的二进制 → 约 1.37 MB 的字符串',
+      'Base64 字符都是 ASCII，UTF-8 下 1 字节/字符',
+      '放进 URL 还要再算百分号编码的膨胀'
+    ],
+    sections: [
+      {
+        h2: '精确公式与三个例子',
+        html: '<p>长度 = <code>4 × ⌈n / 3⌉</code>，n 是原始字节数：每 3 字节一组，最后一组不足 3 字节用 <code>=</code> 补齐。</p><div class="simple-table"><table><thead><tr><th>原始大小</th><th>Base64 字符数</th><th>膨胀</th></tr></thead><tbody><tr><td>1 KB（1024 B）</td><td>1368</td><td>133.6%</td></tr><tr><td>1 MB（1048576 B）</td><td>1398104</td><td>133.3%</td></tr><tr><td>10 MB</td><td>13981016</td><td>133.3%</td></tr></tbody></table></div>'
+      },
+      {
+        h2: '为什么感觉不止 33%',
+        html: '<ul><li><strong>换行</strong>：MIME/PEM 每 76 字符换行，多出约 1.3%</li><li><strong>JSON 转义</strong>：字符串进 JSON 时若带换行或特殊字符，会再涨一点</li><li><strong>内存里的表示</strong>：Base64 字符都是 ASCII，UTF-8 下 1 字节/字符，这一项不额外膨胀；但如果语言内部按 UTF-16 存字符串，内存占用直接翻倍</li><li><strong>URL 编码</strong>：把 <code>+</code> <code>/</code> <code>=</code> 放进 URL，每个都会变成 3 个字符</li></ul>'
+      },
+      {
+        h2: '什么时候该在意这个数字',
+        html: '<p>接口 body 有上限（常见 1–10 MB）、日志按行截断、数据库字段长度固定——这三种场景下，那 33% 往往就是压垮请求的最后一根稻草。解法不是「压缩字符串」（Base64 几乎不可压），而是别把二进制塞进 JSON：改用对象存储加链接。</p>'
+      }
+    ],
+    faqs: [
+      { q: '为什么有时候是 4/3 倍，有时候更多？', a: '4/3 是理论下限。加上填充符、换行、JSON 转义和 URL 编码，实际传输体积会略高；内存里按 UTF-16 存则是字符数的 2 倍。' },
+      { q: '能压缩 Base64 字符串吗？', a: '对已编码的字符串做通用压缩收益很低：Base64 是 6 位一组的均匀分布，几乎不可压。要省体积，应该在编码前压缩原始数据，或者干脆不编码。' },
+      { q: 'Base64URL 会更小吗？', a: '不会。它只是换了两个字符并去掉填充，字符数基本一样（少 0–2 个），换来的是能放进 URL，不是更小。' }
+    ]
+  },
+
   privacy: {
     title: '隐私政策 - b64file',
     desc: 'b64file 隐私政策：本站是纯静态页面，转换在浏览器里完成。这里说明我们处理与不处理哪些信息。',
@@ -915,6 +1006,9 @@ const SHORT_LABEL: Record<string, string> = {
   'base64-to-mp3': 'Base64 转 MP3',
   'base64-to-txt': 'Base64 转 TXT',
   'data-url': 'Data URL 工具',
+  'base64-to-video': 'Base64 转视频',
+  'base64-to-zip': 'Base64 转 ZIP',
+  'base64-size-calculator': '体积换算',
   'jwt-decode': 'JWT 解码',
   'base64-decode-errors': '解码失败排查',
   about: '关于',
@@ -940,6 +1034,9 @@ const PAGE_GROUP: Record<string, PageGroup> = {
   'base64-to-mp3': 'decode',
   'base64-to-txt': 'decode',
   'data-url': 'decode',
+  'base64-to-video': 'decode',
+  'base64-to-zip': 'decode',
+  'base64-size-calculator': 'guide',
   'base64-to-text': 'text',
   base64url: 'text',
   'jwt-decode': 'text',

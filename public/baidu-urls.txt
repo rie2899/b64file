@@ -17,6 +17,9 @@ https://b64file.cn/base64-to-mp3/
 https://b64file.cn/base64-to-txt/
 https://b64file.cn/data-url/
 https://b64file.cn/jwt-decode/
+https://b64file.cn/base64-to-video/
+https://b64file.cn/base64-to-zip/
+https://b64file.cn/base64-size-calculator/
 https://b64file.cn/privacy/
 https://b64file.cn/about/
 https://b64file.cn/terms/
