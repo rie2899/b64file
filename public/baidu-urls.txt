@@ -20,6 +20,8 @@ https://b64file.cn/jwt-decode/
 https://b64file.cn/base64-to-video/
 https://b64file.cn/base64-to-zip/
 https://b64file.cn/base64-size-calculator/
+https://b64file.cn/base64-encrypt/
+https://b64file.cn/base64-javascript/
 https://b64file.cn/privacy/
 https://b64file.cn/about/
 https://b64file.cn/terms/

@@ -688,7 +688,7 @@ export const pageData: Record<PageId, PageContent> = {
     sections: [
       {
         h2: '精确公式与三个例子',
-        html: '<p>长度 = <code>4 × ⌈n / 3⌉</code>，n 是原始字节数：每 3 字节一组，最后一组不足 3 字节用 <code>=</code> 补齐。</p><div class="simple-table"><table><thead><tr><th>原始大小</th><th>Base64 字符数</th><th>膨胀</th></tr></thead><tbody><tr><td>1 KB（1024 B）</td><td>1368</td><td>133.6%</td></tr><tr><td>1 MB（1048576 B）</td><td>1398104</td><td>133.3%</td></tr><tr><td>10 MB</td><td>13981016</td><td>133.3%</td></tr></tbody></table></div>'
+        html: '<p>长度 = <code>4 × ⌈n / 3⌉</code>，n 是原始字节数：每 3 字节一组，最后一组不足 3 字节用 <code>=</code> 补齐。</p><table class="simple-table"><thead><tr><th>原始大小</th><th>Base64 字符数</th><th>膨胀</th></tr></thead><tbody><tr><td>1 KB（1024 B）</td><td>1368</td><td>133.6%</td></tr><tr><td>1 MB（1048576 B）</td><td>1398104</td><td>133.3%</td></tr><tr><td>10 MB</td><td>13981016</td><td>133.3%</td></tr></tbody></table>'
       },
       {
         h2: '为什么感觉不止 33%',
@@ -703,6 +703,76 @@ export const pageData: Record<PageId, PageContent> = {
       { q: '为什么有时候是 4/3 倍，有时候更多？', a: '4/3 是理论下限。加上填充符、换行、JSON 转义和 URL 编码，实际传输体积会略高；内存里按 UTF-16 存则是字符数的 2 倍。' },
       { q: '能压缩 Base64 字符串吗？', a: '对已编码的字符串做通用压缩收益很低：Base64 是 6 位一组的均匀分布，几乎不可压。要省体积，应该在编码前压缩原始数据，或者干脆不编码。' },
       { q: 'Base64URL 会更小吗？', a: '不会。它只是换了两个字符并去掉填充，字符数基本一样（少 0–2 个），换来的是能放进 URL，不是更小。' }
+    ]
+  },
+
+  'base64-encrypt': {
+    title: 'Base64 加密解密在线工具 - 先说清它不是加密 - b64file',
+    desc: '粘贴内容在线 Base64 编码或解码。同时说清一件常被误解的事：Base64 是编码不是加密，没有密钥，任何人都能还原。',
+    h1: 'Base64 加密解密（它不是加密）',
+    answer:
+      '搜「Base64 加密」的人很多，但它没有密钥——任何人拿到字符串都能解回原文。这页给你编码解码工具，也把这件事讲明白：要保密，别指望它。',
+    mode: 'text',
+    textDir: 'encode',
+    sections: [
+      {
+        h2: '为什么大家都管它叫加密',
+        html: '<p>Base64 出来的字符串没有可读性，接口里传的、配置文件里存的、邮件附件里裹的都是这种东西，看着就像被加密过。久而久之，<strong>「Base64 加密」</strong>这个说法就传开了，连不少文档也这么写。</p><p>但加密有个基本前提：<strong>有密钥</strong>。没有密钥就算不出明文。Base64 没有密钥，规则完全公开，一个方向进、一个方向出。</p>'
+      },
+      {
+        h2: '拿它保护数据会发生什么',
+        html: '<p>等于把密码写在信封背面。三个真实场景：</p><ul><li><strong>JWT 的 payload</strong> 就是 Base64URL，复制出来一解就是明文 JSON；它的签名只防篡改，不防偷看。</li><li>配置里那个「加密后的密码」，去掉 Base64 就是原文。</li><li>把接口返回的 Base64 当成「已脱敏」写进日志，等于把原始文件也写进了日志。</li></ul>'
+      },
+      {
+        h2: '那什么时候该用它',
+        html: '<p>它的正当用途只有一个：<strong>在只能传文本的地方传二进制</strong>。JSON 字段里塞图片、URL 里带签名、邮件 MIME 附件、CSS 内联小图标（data URL），都属于这类。</p><p>需要保密就走真正的办法：传输用 HTTPS，存储用带密钥的加密（AES 之类），密码用 bcrypt / argon2 做哈希——哈希不可逆，连你自己也解不回来。</p>'
+      }
+    ],
+    faqs: [
+      { q: 'Base64 能解密吗？', a: '能，直接解码就行，不需要任何密码。所谓「解密」按钮，实际做的是解码。' },
+      { q: '那 JWT 安全吗？', a: 'JWT 保证内容没被改过（靠签名），但不保证别人看不到。payload 里别放手机号、身份证号这类信息。' },
+      { q: '我想真的加密一段文字怎么办？', a: '用带密钥的算法（AES-GCM 之类），密钥单独保管。用 Base64 顶着，只会让自己误以为数据是安全的。' }
+    ]
+  },
+
+  'base64-javascript': {
+    title: 'JavaScript Base64 编码解码 - btoa 中文乱码怎么解决 - b64file',
+    desc: 'btoa / atob 的正确用法、中文报 InvalidCharacterError 的原因与修法、Node 与浏览器差异、base64url 兼容处理，附可直接复制的代码。',
+    h1: 'JavaScript 里的 Base64：btoa 与中文乱码',
+    answer:
+      'btoa 只接受 Latin-1 字符，中文码点超过 255 就直接抛 InvalidCharacterError。正确做法是先用 TextEncoder 编成 UTF-8 字节，再逐字节转成字符串喂给 btoa；解码反过来做。',
+    mode: 'text',
+    textDir: 'encode',
+    sections: [
+      {
+        h2: '最基础的两个 API',
+        html: `<pre class="code-block">btoa('hello')         // "aGVsbG8="
+atob('aGVsbG8=')      // "hello"</pre><p>这两行只在内容是纯 ASCII 时成立。一旦出现中文、emoji、日文，下面这个问题就来了。</p>`
+      },
+      {
+        h2: '中文为什么一定报错',
+        html: `<p><code>btoa</code> 要求输入里每个字符都落在 0–255，中文码点远大于这个范围，于是直接抛 <code>InvalidCharacterError</code>。正确写法是先转字节再编码：</p><pre class="code-block">function b64encode(str) {
+  const bytes = new TextEncoder().encode(str)  // 先编成 UTF-8 字节
+  let bin = ''
+  for (const b of bytes) bin += String.fromCharCode(b)
+  return btoa(bin)
+}</pre><p>解码反过来：<code>atob</code> 拿到字节串，再用 <code>TextDecoder</code> 还原成文本。不要写 <code>String.fromCharCode(...bytes)</code>，大文件一次展开会爆栈，上面用循环就是为了避开它。</p>`
+      },
+      {
+        h2: 'Node 里写法不一样',
+        html: `<pre class="code-block">Buffer.from(str).toString('base64')        // 编码
+Buffer.from(b64, 'base64').toString('utf8') // 解码
+Buffer.from(b64, 'base64url')               // 处理 -_ 与缺失的填充</pre><p>Node 直接吃 Buffer，不需要 TextEncoder 那一套；反过来把这段抄进浏览器，会报 <code>Buffer is not defined</code>。</p>`
+      },
+      {
+        h2: 'base64url：前端最常踩的变体',
+        html: '<p>JWT 和 URL 参数里的 Base64 会把 <code>+</code> 换成 <code>-</code>、<code>/</code> 换成 <code>_</code>，并去掉结尾的 <code>=</code>。直接丢给 <code>atob</code> 会解不出来或出来一串乱码。</p><p>处理只需两步：把 <code>-</code> <code>_</code> 换回 <code>+</code> <code>/</code>，再按 4 的倍数补上 <code>=</code>。</p>'
+      }
+    ],
+    faqs: [
+      { q: 'btoa 和 Base64 是一回事吗？', a: 'btoa 是浏览器提供的一个函数，做的正是 Base64 编码；它只处理 Latin-1，所以中文要自己先转字节。' },
+      { q: '大文件怎么处理？', a: '别一次性读成字符串。用 FileReader.readAsDataURL 或分块读再拼接；几十 MB 以上交给后端或命令行更合适。' },
+      { q: '解出来是乱码？', a: '两个常见原因：拿到的是 base64url（要换字符补填充），或者原始内容本来就不是 UTF-8。' }
     ]
   },
 
@@ -1009,6 +1079,8 @@ const SHORT_LABEL: Record<string, string> = {
   'base64-to-video': 'Base64 转视频',
   'base64-to-zip': 'Base64 转 ZIP',
   'base64-size-calculator': '体积换算',
+  'base64-encrypt': '加密解密',
+  'base64-javascript': 'JS 用法',
   'jwt-decode': 'JWT 解码',
   'base64-decode-errors': '解码失败排查',
   about: '关于',
@@ -1037,6 +1109,8 @@ const PAGE_GROUP: Record<string, PageGroup> = {
   'base64-to-video': 'decode',
   'base64-to-zip': 'decode',
   'base64-size-calculator': 'guide',
+  'base64-encrypt': 'text',
+  'base64-javascript': 'guide',
   'base64-to-text': 'text',
   base64url: 'text',
   'jwt-decode': 'text',

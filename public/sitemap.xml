@@ -133,6 +133,18 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://b64file.cn/base64-encrypt/</loc>
+    <lastmod>2026-10-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://b64file.cn/base64-javascript/</loc>
+    <lastmod>2026-10-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://b64file.cn/privacy/</loc>
     <lastmod>2026-10-08</lastmod>
     <changefreq>weekly</changefreq>
