@@ -1,6 +1,6 @@
 # b64file
 
-在线使用：**[b64file.cn](https://b64file.cn)**
+在线使用：**[b64file.cn](https://b64file.cn)**（中文）· **[b64file.com](https://b64file.com)**（English）
 
 Base64 转文件 · 文件转 Base64 · JSON 提取 —— 全部在浏览器本地完成的转换工具。
 
