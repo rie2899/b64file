@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
-import { canonicalTag, jsonLdScript, metaTags, pageData, renderShell, type PageId } from './src/static-pages';
+import { canonicalTag, hreflangTags, jsonLdScript, metaTags, pageData, renderShell, type PageId } from './src/static-pages';
 
 const pageRegistry = JSON.parse(readFileSync('page-registry.json', 'utf8')) as Array<{
   id: string;
@@ -24,7 +24,7 @@ export default defineConfig({
         return html
           .replace('<div id="app"></div>', `<div id="app">${renderShell(page)}</div>`)
           .replace(/<title>.*?<\/title>\s*<meta name="description" content=".*?" \/>/s, metaTags(page))
-          .replace('</head>', `${canonicalTag(page)}${jsonLdScript(page)}</head>`);
+          .replace('</head>', `${canonicalTag(page)}${hreflangTags(page)}${jsonLdScript(page)}</head>`);
       },
       // llms.txt：给 AI 搜索 / 生成式引擎的站点摘要（GEO）。页面内容一变，这里自动跟着变
       closeBundle() {

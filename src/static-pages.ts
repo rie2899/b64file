@@ -1,5 +1,5 @@
 import pageRegistry from '../page-registry.json';
-import { DEFAULT_SITE_URL, FEEDBACK_EMAIL, ICP_NUMBER, POLICE_RECORD_NUMBER, POLICE_RECORD_URL } from './site-config';
+import { DEFAULT_SITE_URL, EN_SITE_URL, FEEDBACK_EMAIL, ICP_NUMBER, POLICE_RECORD_NUMBER, POLICE_RECORD_URL } from './site-config';
 
 export type PageId = string;
 export type ToolMode = 'to-file' | 'to-base64' | 'text';
@@ -1166,6 +1166,24 @@ export function metaTags(page: PageId): string {
     ${canonical ? `<meta property="og:url" content="${canonical}" />` : ''}
     ${ogImage ? `<meta property="og:image" content="${ogImage}" />` : ''}
     <meta name="twitter:card" content="summary_large_image" />`;
+}
+
+/**
+ * zh/en alternates. hreflang 必须双向声明才有效：英文站已指向 b64file.cn，
+ * 这里补上反向，否则 Google 无法确认两站是同一内容的两个语言版本。
+ */
+export function hreflangTags(page: PageId): string {
+  if (page === '404') return '';
+  const path = pagePaths[page] ?? '/';
+  const zh = absoluteUrl(path);
+  const enBase = EN_SITE_URL.replace(/\/$/, '');
+  const parts: string[] = [];
+  if (zh) parts.push(`<link rel="alternate" hreflang="zh-CN" href="${zh}" />`);
+  if (enBase) {
+    parts.push(`<link rel="alternate" hreflang="en" href="${enBase}${path}" />`);
+    parts.push(`<link rel="alternate" hreflang="x-default" href="${enBase}${path}" />`);
+  }
+  return parts.join('\n    ');
 }
 
 export function canonicalTag(page: PageId): string {

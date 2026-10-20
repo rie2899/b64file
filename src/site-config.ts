@@ -13,3 +13,6 @@ export const POLICE_RECORD_CODE: string = (POLICE_RECORD_NUMBER.match(/\d+/) ?? 
 export const POLICE_RECORD_URL: string = POLICE_RECORD_CODE
   ? `https://beian.mps.gov.cn/#/query/webSearch?code=${POLICE_RECORD_CODE}`
   : '';
+
+/** 英文站地址，用于 zh/en 双向 hreflang */
+export const EN_SITE_URL = 'https://b64file.com';
