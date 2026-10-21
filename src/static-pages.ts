@@ -925,6 +925,7 @@ export function renderShell(currentPage: PageId): string {
       ${crumbs}
       ${hero(currentPage)}
       ${showTool ? toolCard(currentPage) : ''}
+      ${currentPage === 'home' ? toolsIndex() : ''}
       ${contentSections(currentPage)}
       ${d.faqs.length ? faqSection(currentPage) : ''}
       ${currentPage !== '404' ? relatedLinks(currentPage) : ''}
@@ -1035,6 +1036,39 @@ function toolCard(page: PageId): string {
       </div>
 
       <p class="local-note">粘贴、拖拽、Ctrl+V 截图都行</p>
+    </section>
+  `;
+}
+
+/** 首页工具索引的分组标题（顺序即展示顺序） */
+const INDEX_GROUP_TITLE: Array<{ group: PageGroup; title: string }> = [
+  { group: 'decode', title: 'Base64 转文件' },
+  { group: 'encode', title: '文件转 Base64' },
+  { group: 'text', title: '文本编解码' },
+  { group: 'guide', title: '开发与排查' }
+];
+
+/**
+ * 首页工具索引：把全部工具页铺成静态内链。
+ * 目的不是导航体验，而是给爬虫一条从首页通往每个着陆页的完整链路
+ * （此前首页只链 6 个页面，百度七天只抓到首页）。
+ */
+function toolsIndex(): string {
+  const ids = Object.keys(PAGE_GROUP).filter((id) => PAGE_GROUP[id] !== 'info' && PAGE_GROUP[id] !== 'home');
+  const groups = INDEX_GROUP_TITLE.map(({ group, title }) => {
+    const items = ids
+      .filter((id) => PAGE_GROUP[id] === group && SHORT_LABEL[id])
+      .map((id) => `<li><a href="${pagePaths[id] ?? '/'}">${SHORT_LABEL[id]}</a></li>`)
+      .join('\n            ');
+    return `<div class="tool-group">\n          <h3>${title}</h3>\n          <ul>\n            ${items}\n          </ul>\n        </div>`;
+  }).join('\n        ');
+  return `
+    <section class="section tool-index">
+      <h2>全部 ${ids.length} 个工具</h2>
+      <p class="muted">同一个引擎的四种用法。全部免费、无需登录，文件不上传服务器，只在浏览器本地处理。</p>
+      <div class="tool-grid">
+        ${groups}
+      </div>
     </section>
   `;
 }
