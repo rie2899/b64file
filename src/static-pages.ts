@@ -930,7 +930,7 @@ export function renderShell(currentPage: PageId): string {
       ${d.faqs.length ? faqSection(currentPage) : ''}
       ${currentPage !== '404' ? relatedLinks(currentPage) : ''}
     </main>
-    ${footer()}
+    ${footer(currentPage)}
   `;
 }
 
@@ -1227,8 +1227,31 @@ function relatedLinks(currentPage: PageId): string {
 }
 
 
-function footer(): string {
+const FOOTER_CLUSTER: Record<PageGroup, string[]> = {
+  decode: ['/base64-to-pdf/', '/base64-to-word/'],
+  encode: ['/pdf-to-base64/', '/image-to-base64/'],
+  text: ['/base64url/', '/jwt-decode/'],
+  guide: ['/base64url/', '/data-url/'],
+  info: [],
+  home: []
+};
+
+function footer(currentPage: PageId): string {
   const year = new Date().getFullYear();
+  const legal =
+    currentPage === 'home'
+      ? `<a href="/about/">关于</a>
+        <a href="/privacy/">隐私政策</a>
+        <a href="/terms/">服务条款</a>`
+      : `<span class="footer-legal">关于 · 隐私政策 · 服务条款</span>`;
+  const clusterRows: string[] = [];
+  for (const target of FOOTER_CLUSTER[PAGE_GROUP[currentPage] ?? 'info'] ?? []) {
+    const hit = pageRegistry.find((x) => x.path === target);
+    if (hit && hit.id !== currentPage) {
+      clusterRows.push(`<a href="${hit.path}">${SHORT_LABEL[hit.id] ?? hit.id}</a>`);
+    }
+  }
+  const clusterLinks = clusterRows.join('\n        ');
   return `
     <footer class="footer">
       <div class="footer-brand">
@@ -1246,11 +1269,10 @@ function footer(): string {
         <a href="/base64-decode-errors/">解码失败排查</a>
       </div>
       <div class="footer-links">
-        <a href="/about/">关于</a>
-        <a href="/privacy/">隐私政策</a>
-        <a href="/terms/">服务条款</a>
+        ${legal}
         <a href="mailto:${FEEDBACK_EMAIL}">反馈 ${FEEDBACK_EMAIL}</a>
       </div>
+      ${clusterLinks ? `<div class="footer-links">\n        ${clusterLinks}\n      </div>` : ''}
       <p class="muted">© ${year} b64file.cn · Base64 只是编码，不是加密，别拿它保护敏感数据</p>
       ${ICP_NUMBER || POLICE_RECORD_NUMBER ? `<p class="footer-filings">
         ${ICP_NUMBER ? `<a class="muted" href="https://beian.miit.gov.cn/" rel="noopener nofollow" target="_blank">${ICP_NUMBER}</a>` : ''}
