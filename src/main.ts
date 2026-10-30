@@ -1,5 +1,5 @@
 import './styles.css';
-import './home-swiss.css';
+import './swiss.css';
 import { renderShell, type PageId } from './static-pages';
 import { initTool } from './tool';
 import { initTheme } from './theme';

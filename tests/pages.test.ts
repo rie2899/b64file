@@ -70,10 +70,14 @@ describe('page registry consistency', () => {
     // 构建产物 robots.txt / baidu-urls.txt 也在 public/ 里，而且 baidu-urls 恰好满足
     // IndexNow 的 [A-Za-z0-9-]{8,128} 字符集 —— 所以按我们实际生成的 32 位十六进制来认。
     const keys = readdirSync(resolve(root, 'public')).filter((f) => /^[0-9a-f]{32}\.txt$/.test(f));
-    expect(keys.length, 'public/ 下应有且只有一个 <key>.txt').toBe(1);
-    const name = keys[0].replace(/\.txt$/, '');
-    const content = readFileSync(resolve(root, 'public', keys[0]), 'utf8').trim();
-    expect(content, 'key 文件内容必须等于文件名，否则必应校验不过').toBe(name);
+    // 允许存在多个 key（换 key 时旧文件留着不影响校验，IndexNow 一个主机可有多个 key），
+    // 但每一个都必须是「文件名 == 内容」，否则必应校验非过不可。
+    expect(keys.length, 'public/ 下至少要有一个 <key>.txt').toBeGreaterThanOrEqual(1);
+    for (const f of keys) {
+      const name = f.replace(/\.txt$/, '');
+      const content = readFileSync(resolve(root, 'public', f), 'utf8').trim();
+      expect(content, `key 文件 ${f} 的内容必须等于文件名，否则必应校验不过`).toBe(name);
+    }
   });
 
   it('内链图：每页出链 ≤5，且每个对外页面都有 ≥5 条入链', () => {

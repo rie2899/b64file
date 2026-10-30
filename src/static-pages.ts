@@ -892,7 +892,7 @@ Buffer.from(b64, 'base64url')               // 处理 -_ 与缺失的填充</pre
     faqs: []
   },
   'base64-to-word-garbled': {
-    title: 'Base64 转 Word 打开是乱码怎么办 - b64file',
+    title: 'Base64 转 Word 乱码打不开 - 三种原因排查 - b64file',
     desc: '还原出来的 docx 打不开、或者打开一片乱码，通常是三种原因：Base64 被截断、字符串被 URL 编码过、原文件其实是老版 .doc 格式。每种都给判断方法和下一步动作，照着查就行。',
     h1: 'Base64 转 Word 打开是乱码怎么办',
     answer:
@@ -930,7 +930,7 @@ Buffer.from(b64, 'base64url')               // 处理 -_ 与缺失的填充</pre
     ]
   },
   'jwt-expiry': {
-    title: 'JWT exp 怎么换算成剩余时间 - b64file',
+    title: 'JWT exp 换算剩余时间 - 秒级时间戳 - b64file',
     desc: 'exp 是 Unix 秒数，拿它跟毫秒比较会差一千倍。手算、写代码、判断快过期都要先认清单位。时区为什么不影响结果、本机时钟慢几分钟会把倒计时带偏多少，一并说清。',
     h1: 'JWT 的 exp 怎么换算成剩余时间',
     answer:
@@ -972,7 +972,7 @@ const when = new Date(exp * 1000);         // 换成可读时间</pre><p><code>*
     ]
   },
   'data-url-too-long': {
-    title: 'Data URL 太长存不进数据库怎么办 - b64file',
+    title: 'Data URL 太长存不进库 - 换字段还是换存储 - b64file',
     desc: 'Base64 会把体积撑大约三分之一，一张几 MB 的图转成 Data URL 就是几 MB 文本。字段选 TEXT 还是 LONGTEXT、行长度上限卡在哪、什么时候该改存对象存储，这里按字节算一遍，附三种拆法的代价。',
     h1: 'Data URL 太长存不进数据库怎么办',
     answer:
@@ -1093,39 +1093,57 @@ const CONTENT_ONLY_PAGES = new Set(['privacy', 'about', 'terms', '404']);
 export function renderShell(currentPage: PageId): string {
   const showTool = !CONTENT_ONLY_PAGES.has(currentPage);
   const d = pageData[currentPage] ?? pageData.home;
-  // 首页走瑞士国际主义版式（src/home-swiss.css）：结构、编号、对齐都和工具页不同，
-  // 所以整棵子树单独渲染，工具页仍旧走下面那套模板，一个字节都不动。
-  if (currentPage === 'home') {
-    return `
-    ${homeHeader()}
-    <main class="sw-main">
-      ${homeHero()}
-      ${homeUpload()}
-      ${homeToolsIndex()}
-      ${homeWhy()}
-      ${homeFaq()}
-      ${relatedLinks('home', '05')}
-    </main>
-    ${homeFooter()}
-  `;
-  }
-  const crumbs =
-    currentPage !== 'home' && currentPage !== '404'
-      ? `<nav class="crumbs" aria-label="面包屑"><a href="/">❯ 首页</a> / <span>${d.h1}</span></nav>`
-      : '';
+  const body = currentPage === 'home' ? homeBody() : docsBody(currentPage, d, showTool);
+  // 32 页共用同一个外壳和同一套记号（src/swiss.css）：顶边 5px 红条 + 导航 +
+  // 页脚（上 5px 红条 / 下 5px 红条）。页面之间只有"内容块"不同，不是两套模板。
   return `
-    ${header(currentPage)}
-    <main>
-      ${crumbs}
-      ${hero(currentPage)}
-      ${showTool ? toolCard(currentPage) : ''}
-      ${currentPage === 'home' ? toolsIndex() : ''}
-      ${contentSections(currentPage)}
-      ${d.faqs.length ? faqSection(currentPage) : ''}
-      ${currentPage !== '404' ? relatedLinks(currentPage) : ''}
+    ${swissHeader(currentPage)}
+    <main class="sw-main">
+      ${body}
     </main>
-    ${footer(currentPage)}
+    ${swissFooter()}
   `;
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+/** 首页：Hero → 01 转换区 → 02 索引 → 03 为什么 → 04 FAQ → 05 相关 */
+function homeBody(): string {
+  return [
+    homeHero(),
+    homeUpload(),
+    homeToolsIndex(),
+    homeWhy(),
+    faqSection('home', '04'),
+    relatedLinks('home', '05')
+  ].join('\n');
+}
+
+/**
+ * 工具页 / 指南页：面包屑 → 页头 → 01 转换区（about/privacy/terms/404 没有）
+ * → 02.. 正文分节 → FAQ → 相关。编号连着排，和首页的章号语气一致。
+ */
+function docsBody(page: PageId, d: PageContent, showTool: boolean): string {
+  const out: string[] = [];
+  if (page !== '404') out.push(swissCrumbs(page, d.h1));
+  out.push(pageHero(page));
+  let no = 1;
+  if (showTool) {
+    out.push(toolSection(page));
+    no += 1;
+  }
+  for (const s of d.sections) {
+    out.push(proseSection(pad2(no), s.h2, s.html));
+    no += 1;
+  }
+  if (d.faqs.length) {
+    out.push(faqSection(page, pad2(no)));
+    no += 1;
+  }
+  if (page !== '404') out.push(relatedLinks(page, pad2(no)));
+  return out.join('\n');
 }
 
 /** 主导航项（顺序即展示顺序） */
@@ -1137,131 +1155,213 @@ const NAV_ITEMS: Array<{ path: string; label: string }> = [
   { path: '/base64-decode-errors/', label: '解码失败排查' }
 ];
 
-function header(currentPage: PageId): string {
+/** 英文站对应地址（没有英文对应页的落地页回落到英文站首页） */
+function enCounterpart(page: PageId): string {
+  const base = EN_SITE_URL.replace(/\/$/, '');
+  if (NO_EN_COUNTERPART.has(page)) return `${base}/`;
+  return `${base}${pagePaths[page] ?? '/'}`;
+}
+
+function swissHeader(currentPage: PageId): string {
   const currentPath = (pageRegistry as Array<{ id: string; path: string }>).find((p) => p.id === currentPage)?.path;
-  const links = NAV_ITEMS.map((item) =>
-    item.path === currentPath
-      ? `<a href="${item.path}" class="active" aria-current="page">${item.label}</a>`
-      : `<a href="${item.path}">${item.label}</a>`
-  ).join('\n          ');
+  const isHome = currentPage === 'home';
+  const links = isHome
+    ? `<a href="#tools">工具</a>
+          <a href="#why">用法</a>
+          <a href="#about">关于</a>`
+    : NAV_ITEMS.map((item) =>
+        item.path === currentPath
+          ? `<a href="${item.path}" class="active" aria-current="page">${item.label}</a>`
+          : `<a href="${item.path}">${item.label}</a>`
+      ).join('\n          ');
   return `
-    <header class="site-header">
-      <nav class="nav" aria-label="主导航">
-        <a class="brand" href="/">
-          <svg class="brand-icon" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="bg-lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d97757"/><stop offset="1" stop-color="#c15f3c"/></linearGradient></defs><rect width="64" height="64" rx="9" fill="url(#bg-lg)"/><text x="32" y="41.4" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="23" font-weight="700" fill="#ffffff">b64</text></svg>
-          <span class="brand-word"><span class="brand-mark">b64</span>file</span>
-        </a>
-        <div class="nav-links">
+    <header class="sw-header">
+      <div class="sw-topbar" aria-hidden="true"></div>
+      <nav class="sw-nav" aria-label="主导航">
+        <a class="sw-brand" href="/">b64file</a>
+        <span class="sw-badge">${isHome ? '浏览器内转换' : '无需登录'}</span>
+        <div class="sw-nav-links${isHome ? '' : ' sw-nav-links--page'}">
           ${links}
         </div>
-        <div class="nav-side">
-          <span class="local-chip" title="打开就能用，不需要注册或登录">无需登录</span>
-          <button id="theme-toggle" class="theme-toggle" type="button" aria-label="换个主题看看">🌙</button>
+        <div class="sw-nav-end">
+          <div class="sw-lang" aria-label="语言"><span class="sw-lang-on">中文</span><a href="${enCounterpart(currentPage)}" hreflang="en" lang="en">EN</a></div>
+          <button id="theme-toggle" class="sw-icon-btn" type="button" aria-label="切换主题">🌙</button>
+          <a class="sw-gh" href="${HOME_REPO_URL}" target="_blank" rel="noopener">GitHub<span class="sw-gh-ar" aria-hidden="true">↗</span></a>
         </div>
       </nav>
     </header>
   `;
 }
 
-function hero(page: PageId): string {
-  const d = pageData[page] ?? pageData.home;
+/** 面包屑（工具页与指南页）：给爬虫看的那条，也给读者一个"这在站里的哪一层" */
+function swissCrumbs(currentPage: PageId, h1: string): string {
+  const kind = CONTENT_ONLY_PAGES.has(currentPage) ? 'site' : 'tools';
   return `
-    <section class="hero hero-tight">
-      <p class="hero-prompt" aria-hidden="true"><span class="prompt-sign">❯</span> paste --anything<span class="hero-cursor"></span><span class="prompt-comment"># 粘贴即处理</span></p>
+    <nav class="sw-crumbs" aria-label="面包屑">
+      <a href="/">首页</a>
+      <span class="sw-cr-sep" aria-hidden="true">/</span>
+      <span>${kind}</span>
+      <span class="sw-cr-sep" aria-hidden="true">/</span>
+      <span class="sw-cr-cur">${h1}</span>
+    </nav>
+  `;
+}
+
+/** 文档页页头： eyebrow（类型 / 路径）+ H1 + 结论段 + 首屏速查 */
+function pageHero(page: PageId): string {
+  const d = pageData[page] ?? pageData.home;
+  const kind = CONTENT_ONLY_PAGES.has(page) ? '说明' : '工具';
+  return `
+    <section class="sw-hero sw-hero--page">
+      <p class="sw-eyebrow">
+        <span class="sw-sq" aria-hidden="true"></span>
+        <span>${kind}</span>
+        <span class="sw-sep" aria-hidden="true">/</span>
+        <span>浏览器内处理</span>
+        <span class="sw-sep" aria-hidden="true">/</span>
+        <span>${homeToolCount()} 个工具同一引擎</span>
+      </p>
       <h1>${d.h1}</h1>
-      <p class="answer">${d.answer}</p>
+      <p class="sw-sub">${d.answer}</p>
       ${d.quick?.length ? `<ul class="quick-list">${d.quick.map((q) => `<li>${q}</li>`).join('')}</ul>` : ''}
     </section>
   `;
 }
 
-function toolCard(page: PageId): string {
+/**
+ * 01 转换区。整行宽度，标题在上、操作框在下，右侧一栏是规格。
+ * 32 页共用同一份 DOM：tab 顺序、默认方向、所有 id 都和首页一致，
+ * tool.ts 与 tests/tool-dom.test.ts 一行都不用改。
+ */
+function toolSection(page: PageId, captionTitle = '转换区 / Converter', captionRight = ''): string {
   const d = pageData[page] ?? pageData.home;
+  const count = homeToolCount();
+  const right =
+    captionRight ||
+    (d.mode === 'to-base64' ? 'FILE → BASE64' : d.mode === 'text' ? 'TEXT ⇄ BASE64' : 'BASE64 → FILE');
   return `
-    <section class="tool-card" id="tool" data-default-mode="${d.mode}">
-      <div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="term-title">b64file — converter · local</span></div>
-      <div class="mode-tabs" role="tablist" aria-label="转换模式">
-        <button class="mode-tab" data-mode="to-file" role="tab" type="button">Base64 转文件</button>
-        <button class="mode-tab" data-mode="to-base64" role="tab" type="button">文件转 Base64</button>
-        <button class="mode-tab" data-mode="text" role="tab" type="button">文本编解码</button>
+    <section class="sw-upload">
+      <div class="sw-cap">
+        <span class="sw-cap-no">01</span>
+        <span class="sw-cap-title">${captionTitle}</span>
+        <span class="sw-cap-right">${right}</span>
       </div>
-
-      <div class="mode-panel" data-panel="to-file">
-        <textarea id="b64-input" class="mono-input" rows="6" spellcheck="false" aria-label="粘贴 Base64 或文件数据"
-          placeholder="粘贴 Base64、data: 开头的一段、或整段接口 JSON"></textarea>
-        <div class="input-actions">
-          <button id="b64-sample" class="ghost-btn" type="button">载入示例</button>
-          <button id="b64-load-file" class="ghost-btn" type="button">导入 .txt / .b64</button>
-          <input type="file" id="b64-file-input" accept=".txt,.b64,.text,text/plain" hidden />
-          <button id="b64-clear" class="ghost-btn" type="button">清空</button>
+      <div class="sw-box" id="tool" data-default-mode="${d.mode}">
+        <div class="sw-tabs" role="tablist" aria-label="转换模式">
+          <button class="sw-tab mode-tab" id="sw-tab-to-file" data-mode="to-file" role="tab" type="button" aria-selected="true" aria-controls="sw-panel-to-file">粘贴 Base64</button>
+          <button class="sw-tab mode-tab" id="sw-tab-to-base64" data-mode="to-base64" role="tab" type="button" aria-selected="false" aria-controls="sw-panel-to-base64">上传文件</button>
+          <button class="sw-tab mode-tab" id="sw-tab-text" data-mode="text" role="tab" type="button" aria-selected="false" aria-controls="sw-panel-text">文本编解码</button>
+          <span class="sw-tabs-note">在本机读取 · 不上传</span>
         </div>
-        <p class="input-hint">粘贴即自动处理，不用点按钮（Ctrl+Enter 立刻转换 / Esc 清空）</p>
-        <div id="b64-diagnosis" class="diagnosis" hidden></div>
-        <div id="b64-result" class="result-area" hidden></div>
+
+        <div class="sw-frame">
+          <div class="sw-frame-main">
+            <div class="mode-panel sw-panel" data-panel="to-file" id="sw-panel-to-file" role="tabpanel" aria-labelledby="sw-tab-to-file">
+              <div class="sw-panel-head"><span>粘贴 / Paste</span><span>Base64 · Data URL · JSON</span></div>
+              <textarea id="b64-input" class="sw-textarea" rows="6" spellcheck="false" aria-label="粘贴 Base64 或文件数据" placeholder="粘贴 Base64、data: 开头的一段、或整段接口 JSON"></textarea>
+              <div class="sw-row">
+                <button id="b64-sample" class="sw-btn sw-btn--ghost" type="button">载入示例</button>
+                <button id="b64-load-file" class="sw-btn sw-btn--ghost" type="button">导入 .txt / .b64</button>
+                <button id="b64-clear" class="sw-btn sw-btn--ghost" type="button">清空</button>
+                <input type="file" id="b64-file-input" accept=".txt,.b64,.text,text/plain" hidden />
+                <span class="sw-hint">粘贴即自动处理 · Ctrl+Enter 立刻转换 · Esc 清空</span>
+              </div>
+              <div id="b64-diagnosis" class="diagnosis" hidden></div>
+              <div id="b64-result" class="result-area" hidden></div>
+            </div>
+
+            <div class="mode-panel sw-panel" data-panel="to-base64" id="sw-panel-to-base64" role="tabpanel" aria-labelledby="sw-tab-to-base64" hidden>
+              <div id="drop-zone" class="drop-zone sw-drop">
+                <div class="sw-drop-main">
+                  <div class="sw-drop-head"><span>Drag &amp; drop / 拖拽区</span><span>支持多选</span></div>
+                  <svg class="sw-drop-icon drop-icon" width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+                    <path d="M15 3v14" stroke="currentColor" stroke-width="1.5"></path>
+                    <path d="M9 11.5l6 6 6-6" stroke="currentColor" stroke-width="1.5"></path>
+                    <path d="M4.5 24.5h21" stroke="currentColor" stroke-width="1.5"></path>
+                  </svg>
+                  <p class="sw-drop-title">把文件拖到这里</p>
+                  <p class="sw-drop-sub">或者直接选，支持一次选多个</p>
+                  <button id="pick-file" class="sw-btn sw-btn--red" type="button">选择文件</button>
+                  <input type="file" id="file-input" hidden />
+                </div>
+              </div>
+              <div id="file-info" hidden></div>
+              <div id="encode-options" class="sw-opts" hidden>
+                <label><input type="checkbox" id="opt-urlsafe" /> URL-safe（<code>-</code> <code>_</code> 替代 <code>+</code> <code>/</code>，无填充）</label>
+                <label><input type="checkbox" id="opt-dataurl" /> 带上 data: 前缀</label>
+                <label><input type="checkbox" id="opt-wrap76" /> 按 76 字符换行（MIME / PEM 格式）</label>
+              </div>
+              <div id="encode-result" hidden></div>
+            </div>
+
+            <div class="mode-panel sw-panel" data-panel="text" id="sw-panel-text" role="tabpanel" aria-labelledby="sw-tab-text" hidden>
+              <div class="sw-row sw-row--head">
+                <div class="text-direction sw-dir">
+                  <label><input type="radio" name="text-dir" value="encode"${d.textDir === 'decode' ? '' : ' checked'} /> 文本 → Base64</label>
+                  <label><input type="radio" name="text-dir" value="decode"${d.textDir === 'decode' ? ' checked' : ''} /> Base64 → 文本</label>
+                </div>
+                <div class="encode-options sw-opts sw-opts--inline" id="text-urlsafe-wrap"${d.textDir === 'decode' ? ' hidden' : ''}>
+                  <label><input type="checkbox" id="opt-text-urlsafe" /> URL-safe 输出（<code>-</code> <code>_</code> 替代 <code>+</code> <code>/</code>，去掉填充）</label>
+                </div>
+              </div>
+              <textarea id="text-input" class="sw-textarea" rows="4" spellcheck="false" aria-label="输入文本或 Base64" placeholder="输入文本或 Base64，方向在上面切换"></textarea>
+              <div id="text-output" class="text-output sw-out" hidden></div>
+            </div>
+          </div>
+
+          <aside class="sw-spec" aria-label="工具规格">
+            <div class="sw-spec-k">规格 / Spec</div>
+            <dl class="sw-spec-dl">
+              <div><dt>工具</dt><dd>${count} 个</dd></div>
+              <div><dt>上传</dt><dd>不经过服务器</dd></div>
+              <div><dt>账号</dt><dd>不需要</dd></div>
+              <div><dt>额度</dt><dd>无</dd></div>
+              <div><dt>存储</dt><dd>仅主题偏好</dd></div>
+            </dl>
+            <p class="sw-spec-foot">无账号 · 无额度 · 无日志</p>
+          </aside>
+        </div>
+
+        <dl class="sw-meta">
+          <div class="sw-meta-row">
+            <dt>Format / 支持格式</dt>
+            <dd>任意文件。图片、PDF、Word、Excel、音视频、压缩包、纯文本都在 ${count} 个工具里。</dd>
+          </div>
+          <div class="sw-meta-row">
+            <dt>Reader / 读取方式</dt>
+            <dd class="sw-mono">FileReader · 分片</dd>
+          </div>
+          <div class="sw-meta-row">
+            <dt>Output / 输出</dt>
+            <dd class="sw-mono">Base64 · Base64URL · Data URL</dd>
+          </div>
+        </dl>
       </div>
-
-      <div class="mode-panel" data-panel="to-base64" hidden>
-        <div id="drop-zone" class="drop-zone">
-          <div class="drop-icon">📄</div>
-          <p><strong>拖文件进来</strong>，或 <button id="pick-file" class="link-btn" type="button">点一下选择</button>——截图直接 Ctrl+V 也行</p>
-          <p class="muted">任意类型 · 100 MB 封顶</p>
-          <input type="file" id="file-input" hidden />
-        </div>
-        <div id="file-info" hidden></div>
-        <div id="encode-options" class="encode-options" hidden>
-          <label><input type="checkbox" id="opt-urlsafe" /> URL-safe（- _ 替代 + /，无填充）</label>
-          <label><input type="checkbox" id="opt-dataurl" /> 带上 data: 前缀</label>
-          <label><input type="checkbox" id="opt-wrap76" /> 按 76 字符换行（MIME / PEM 格式）</label>
-        </div>
-        <div id="encode-result" hidden></div>
-      </div>
-
-      <div class="mode-panel" data-panel="text" hidden>
-        <div class="text-direction">
-          <label><input type="radio" name="text-dir" value="encode"${d.textDir === 'decode' ? '' : ' checked'} /> 文本 → Base64</label>
-          <label><input type="radio" name="text-dir" value="decode"${d.textDir === 'decode' ? ' checked' : ''} /> Base64 → 文本</label>
-        </div>
-        <div class="encode-options" id="text-urlsafe-wrap"${d.textDir === 'decode' ? ' hidden' : ''}>
-          <label><input type="checkbox" id="opt-text-urlsafe" /> URL-safe 输出（<code>-</code> <code>_</code> 替代 <code>+</code> <code>/</code>，去掉填充）</label>
-        </div>
-        <textarea id="text-input" class="mono-input" rows="4" spellcheck="false" aria-label="输入文本或 Base64"
-          placeholder="输入文本或 Base64，方向在上面切换"></textarea>
-        <div id="text-output" class="text-output" hidden></div>
-      </div>
-
-      <p class="local-note">粘贴、拖拽、Ctrl+V 截图都行</p>
     </section>
   `;
 }
 
-/** 首页工具索引的分组标题（顺序即展示顺序） */
-const INDEX_GROUP_TITLE: Array<{ group: PageGroup; title: string }> = [
-  { group: 'decode', title: 'Base64 转文件' },
-  { group: 'encode', title: '文件转 Base64' },
-  { group: 'text', title: '文本编解码' },
-  { group: 'guide', title: '开发与排查' }
-];
-
-/**
- * 首页工具索引：把全部工具页铺成静态内链。
- * 目的不是导航体验，而是给爬虫一条从首页通往每个着陆页的完整链路
- * （此前首页只链 6 个页面，百度七天只抓到首页）。
- */
-function toolsIndex(): string {
-  const ids = Object.keys(PAGE_GROUP).filter((id) => PAGE_GROUP[id] !== 'info' && PAGE_GROUP[id] !== 'home');
-  const groups = INDEX_GROUP_TITLE.map(({ group, title }) => {
-    const items = ids
-      .filter((id) => PAGE_GROUP[id] === group && SHORT_LABEL[id])
-      .map((id) => `<li><a href="${pagePaths[id] ?? '/'}">${SHORT_LABEL[id]}</a></li>`)
-      .join('\n            ');
-    return `<div class="tool-group">\n          <h3>${title}</h3>\n          <ul>\n            ${items}\n          </ul>\n        </div>`;
-  }).join('\n        ');
+/** 正文分节：巨大章号 + 标题 + 上边框，正文落在第 4 栏起（和首页章头同一套栅格） */
+function proseSection(no: string, h2: string, html: string): string {
   return `
-    <section class="section tool-index">
-      <h2>全部 ${ids.length} 个工具</h2>
-      <p class="muted">同一个引擎的四种用法。全部免费、无需登录，文件不上传服务器，只在浏览器本地处理。</p>
-      <div class="tool-grid">
-        ${groups}
+    <section class="sw-sec">
+      ${swChapterHead(no, h2, `Section · ${no}`)}
+      <div class="sw-sec-body">
+        <div class="sw-prose">${html}</div>
+      </div>
+    </section>
+  `;
+}
+
+function faqSection(page: PageId, no: string): string {
+  const d = pageData[page] ?? pageData.home;
+  return `
+    <section class="sw-sec">
+      ${swChapterHead(no, '常见问题', `FAQ · ${d.faqs.length} 问`)}
+      <div class="sw-sec-body sw-sec-body--rows">
+      <div class="sw-faq">
+        ${d.faqs.map((f) => `<details><summary>${f.q}</summary><p>${f.a}</p></details>`).join('\n        ')}
+      </div>
       </div>
     </section>
   `;
@@ -1270,20 +1370,14 @@ function toolsIndex(): string {
 function contentSections(page: PageId): string {
   const d = pageData[page] ?? pageData.home;
   if (!d.sections.length) return '';
-  return d.sections
-    .map((s, i) => `<section class="section"><span class="section-no">[${String(i + 1).padStart(2, '0')}]</span><h2>${s.h2}</h2>${s.html}</section>`)
-    .join('\n');
+  return d.sections.map((s, i) => proseSection(pad2(i + 1), s.h2, s.html)).join('\n');
 }
 
-function faqSection(page: PageId): string {
-  const d = pageData[page] ?? pageData.home;
-  return `
-    <section class="section">
-      <h2>常见问题</h2>
-      ${d.faqs.map((f) => `<details><summary>${f.q}</summary><p class="muted">${f.a}</p></details>`).join('')}
-    </section>
-  `;
-}
+/**
+ * 首页工具索引：把全部工具页铺成静态内链。
+ * 目的不是导航体验，而是给爬虫一条从首页通往每个着陆页的完整链路
+ * （此前首页只链 6 个页面，百度七天只抓到首页）。
+ */
 
 /** 站内短名（导航/相关链接用；h1 太长不适合做链接文字） */
 const SHORT_LABEL: Record<string, string> = {
@@ -1425,8 +1519,10 @@ function relatedLinks(currentPage: PageId, chapterNo?: string): string {
     return `
     <section class="sw-sec" id="related">
       ${swChapterHead(chapterNo, '相关工具与指南', 'Related · 同一引擎的其它入口')}
+      <div class="sw-sec-body sw-sec-body--rows">
       <div class="sw-related">
       ${body}
+      </div>
       </div>
     </section>
   `;
@@ -1441,68 +1537,66 @@ function relatedLinks(currentPage: PageId, chapterNo?: string): string {
 }
 
 
-const FOOTER_CLUSTER: Record<PageGroup, string[]> = {
-  decode: ['/base64-to-pdf/', '/base64-to-word/'],
-  encode: ['/pdf-to-base64/', '/image-to-base64/'],
-  text: ['/base64url/', '/jwt-decode/'],
-  guide: ['/base64url/', '/data-url/'],
-  info: [],
-  home: []
-};
-
-function footer(currentPage: PageId): string {
+/** 页脚（全站同一份）：上 5px 红条、三栏链接、备案行、下 5px 红条 */
+function swissFooter(): string {
   const year = new Date().getFullYear();
-  const legal =
-    currentPage === 'home'
-      ? `<a href="/about/">关于</a>
-        <a href="/privacy/">隐私政策</a>
-        <a href="/terms/">服务条款</a>`
-      : `<span class="footer-legal">关于 · 隐私政策 · 服务条款</span>`;
-  const clusterRows: string[] = [];
-  for (const target of FOOTER_CLUSTER[PAGE_GROUP[currentPage] ?? 'info'] ?? []) {
-    const hit = pageRegistry.find((x) => x.path === target);
-    if (hit && hit.id !== currentPage) {
-      clusterRows.push(`<a href="${hit.path}">${SHORT_LABEL[hit.id] ?? hit.id}</a>`);
-    }
-  }
-  const clusterLinks = clusterRows.join('\n        ');
+  const filings = [
+    ICP_NUMBER
+      ? `<a href="https://beian.miit.gov.cn/" rel="noopener nofollow" target="_blank">${ICP_NUMBER}</a>`
+      : '',
+    POLICE_RECORD_NUMBER
+      ? `<a href="${POLICE_RECORD_URL}" rel="noopener nofollow" target="_blank">${POLICE_RECORD_NUMBER}</a>`
+      : ''
+  ]
+    .filter(Boolean)
+    .join('<span class="sw-dot" aria-hidden="true">·</span>');
   return `
-    <footer class="footer">
-      <div class="footer-brand">
-        <svg class="brand-icon" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="bg-fg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d97757"/><stop offset="1" stop-color="#c15f3c"/></linearGradient></defs><rect width="64" height="64" rx="9" fill="url(#bg-fg)"/><text x="32" y="41.4" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="23" font-weight="700" fill="#ffffff">b64</text></svg>
-        <strong>b64file</strong>
+    <footer class="sw-foot" id="about">
+      <div class="sw-foot-top">
+        <div class="sw-foot-brand">
+          <div class="sw-fb-mark">b64file</div>
+          <p class="sw-fb-tag">由爱而生 · 浏览器里的 Base64 工具箱。转换全部在本机完成，不做账号，也不存文件。</p>
+          <a class="sw-fb-mail" href="mailto:${FEEDBACK_EMAIL}">反馈 · ${FEEDBACK_EMAIL}</a>
+        </div>
+        <div class="sw-foot-cols">
+          <div class="sw-fc">
+            <h4>转换</h4>
+            <a href="/file-to-base64/">文件转 Base64</a>
+            <a href="/base64-to-file/">Base64 转文件</a>
+            <a href="/image-to-base64/">图片转 Base64</a>
+            <a href="/pdf-to-base64/">PDF 转 Base64</a>
+          </div>
+          <div class="sw-fc">
+            <h4>开发</h4>
+            <a href="/jwt-decode/">JWT 解码</a>
+            <a href="/data-url/">Data URL 转换</a>
+            <a href="/base64url/">Base64URL</a>
+            <a href="/base64-javascript/">JavaScript 用法</a>
+          </div>
+          <div class="sw-fc">
+            <h4>站点</h4>
+            <a href="/#tools">工具索引</a>
+            <a href="/about/">关于</a>
+            <a href="/privacy/">隐私政策</a>
+            <a href="/terms/">服务条款</a>
+          </div>
+        </div>
       </div>
-      <p class="footer-tagline">由爱而生 · 免费 · 无账号 · 无广告</p>
-      <div class="statusbar"><span class="sb-left">b64file</span><span class="sb-right">rfc4648 · 91 tests</span></div>
-      <div class="footer-links">
-        <a href="/">首页</a>
-        <a href="/base64-to-file/">Base64 转文件</a>
-        <a href="/json-to-file/">JSON 转文件</a>
-        <a href="/file-to-base64/">文件转 Base64</a>
-        <a href="/base64-to-image/">Base64 转图片</a>
-        <a href="/base64-decode-errors/">解码失败排查</a>
+      <div class="sw-foot-bot">
+        <span>© ${year} b64file.cn</span>
+        ${filings ? `<span class="sw-filings">${filings}</span>` : ''}
+        <span>Base64 只是编码，不是加密 · 全站转换在本机完成</span>
       </div>
-      <div class="footer-links">
-        ${legal}
-        <a href="mailto:${FEEDBACK_EMAIL}">反馈 ${FEEDBACK_EMAIL}</a>
-      </div>
-      ${clusterLinks ? `<div class="footer-links">\n        ${clusterLinks}\n      </div>` : ''}
-      <p class="muted">© ${year} b64file.cn · Base64 只是编码，不是加密，别拿它保护敏感数据</p>
-      ${ICP_NUMBER || POLICE_RECORD_NUMBER ? `<p class="footer-filings">
-        ${ICP_NUMBER ? `<a class="muted" href="https://beian.miit.gov.cn/" rel="noopener nofollow" target="_blank">${ICP_NUMBER}</a>` : ''}
-        ${ICP_NUMBER && POLICE_RECORD_NUMBER ? '<span class="muted"> · </span>' : ''}
-        ${POLICE_RECORD_NUMBER ? `<a class="muted" href="${POLICE_RECORD_URL}" rel="noopener nofollow" target="_blank">${POLICE_RECORD_NUMBER}</a>` : ''}
-      </p>` : ''}
+      <div class="sw-footbar" aria-hidden="true"></div>
     </footer>
   `;
 }
 
 /* ==========================================================================
-   首页 · 瑞士国际主义版式
-   结构：5px 红条 / 导航 → Hero → 01 上传区（整行）→ 02 工具索引
-        → 03 为什么用它 → 04 FAQ → 05 相关入口 → 页脚（上下各 5px 红条）
-   样式全部在 src/home-swiss.css 里以 body[data-page='home'] 限定，
-   工具页共用的 styles.css 不受影响。
+   首页内容块
+   结构：Hero → 01 转换区 → 02 工具索引 → 03 为什么用它 → 04 FAQ → 05 相关
+   外壳（红条 / 导航 / 页脚）和全部样式在 src/swiss.css，每一条规则都以
+   body[data-page] 限定，32 页共用 —— 这里只负责首页独有的内容排布。
    ========================================================================== */
 
 const HOME_REPO_URL = 'https://github.com/rie2899/b64file';
@@ -1594,26 +1688,6 @@ function homeToolCount(): number {
   return Object.keys(PAGE_GROUP).filter((id) => PAGE_GROUP[id] !== 'info' && PAGE_GROUP[id] !== 'home').length;
 }
 
-function homeHeader(): string {
-  return `
-    <header class="sw-header">
-      <div class="sw-topbar" aria-hidden="true"></div>
-      <nav class="sw-nav" aria-label="主导航">
-        <a class="sw-brand" href="/">b64file</a>
-        <span class="sw-badge">浏览器内转换</span>
-        <div class="sw-nav-links">
-          <a href="#tools">工具</a>
-          <a href="#why">用法</a>
-          <a href="#about">关于</a>
-        </div>
-        <div class="sw-nav-end">
-          <button id="theme-toggle" class="sw-icon-btn" type="button" aria-label="切换主题">🌙</button>
-          <a class="sw-gh" href="${HOME_REPO_URL}" target="_blank" rel="noopener">GitHub<span class="sw-gh-ar" aria-hidden="true">↗</span></a>
-        </div>
-      </nav>
-    </header>
-  `;
-}
 
 function homeHero(): string {
   const count = homeToolCount();
@@ -1639,109 +1713,9 @@ function homeHero(): string {
  * 三个 tab 对应 tool.ts 的三个模式；默认方向沿用 pageData.home.mode（to-file）。
  * 所有 DOM id 与 class 都沿用原首页那一套，tool.ts 一行都不用改。
  */
+/** 首页的 01 区：和其余 31 页同一份转换区，只是标题写「上传 / Upload」 */
 function homeUpload(): string {
-  const d = pageData.home;
-  const count = homeToolCount();
-  return `
-    <section class="sw-upload">
-      <div class="sw-cap">
-        <span class="sw-cap-no">01</span>
-        <span class="sw-cap-title">上传 / Upload</span>
-        <span class="sw-cap-right">FILE → BASE64</span>
-      </div>
-      <div class="sw-box" id="tool" data-default-mode="${d.mode}">
-        <div class="sw-tabs" role="tablist" aria-label="转换模式">
-          <button class="sw-tab mode-tab" id="sw-tab-to-file" data-mode="to-file" role="tab" type="button" aria-selected="true" aria-controls="sw-panel-to-file">粘贴 Base64</button>
-          <button class="sw-tab mode-tab" id="sw-tab-to-base64" data-mode="to-base64" role="tab" type="button" aria-selected="false" aria-controls="sw-panel-to-base64">上传文件</button>
-          <button class="sw-tab mode-tab" id="sw-tab-text" data-mode="text" role="tab" type="button" aria-selected="false" aria-controls="sw-panel-text">文本编解码</button>
-          <span class="sw-tabs-note">在本机读取 · 不上传</span>
-        </div>
-
-        <div class="sw-frame">
-          <div class="sw-frame-main">
-            <div class="mode-panel sw-panel" data-panel="to-file" id="sw-panel-to-file" role="tabpanel" aria-labelledby="sw-tab-to-file">
-              <div class="sw-panel-head"><span>粘贴 / Paste</span><span>Base64 · Data URL · JSON</span></div>
-              <textarea id="b64-input" class="sw-textarea" rows="6" spellcheck="false" aria-label="粘贴 Base64 或文件数据" placeholder="粘贴 Base64、data: 开头的一段、或整段接口 JSON"></textarea>
-              <div class="sw-row">
-                <button id="b64-sample" class="sw-btn sw-btn--ghost" type="button">载入示例</button>
-                <button id="b64-load-file" class="sw-btn sw-btn--ghost" type="button">导入 .txt / .b64</button>
-                <button id="b64-clear" class="sw-btn sw-btn--ghost" type="button">清空</button>
-                <input type="file" id="b64-file-input" accept=".txt,.b64,.text,text/plain" hidden />
-                <span class="sw-hint">粘贴即自动处理 · Ctrl+Enter 立刻转换 · Esc 清空</span>
-              </div>
-              <div id="b64-diagnosis" class="diagnosis" hidden></div>
-              <div id="b64-result" class="result-area" hidden></div>
-            </div>
-
-            <div class="mode-panel sw-panel" data-panel="to-base64" id="sw-panel-to-base64" role="tabpanel" aria-labelledby="sw-tab-to-base64" hidden>
-              <div id="drop-zone" class="drop-zone sw-drop">
-                <div class="sw-drop-main">
-                  <div class="sw-drop-head"><span>Drag &amp; drop / 拖拽区</span><span>支持多选</span></div>
-                  <svg class="sw-drop-icon drop-icon" width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
-                    <path d="M15 3v14" stroke="currentColor" stroke-width="1.5"></path>
-                    <path d="M9 11.5l6 6 6-6" stroke="currentColor" stroke-width="1.5"></path>
-                    <path d="M4.5 24.5h21" stroke="currentColor" stroke-width="1.5"></path>
-                  </svg>
-                  <p class="sw-drop-title">把文件拖到这里</p>
-                  <p class="sw-drop-sub">或者直接选，支持一次选多个</p>
-                  <button id="pick-file" class="sw-btn sw-btn--red" type="button">选择文件</button>
-                  <input type="file" id="file-input" hidden />
-                </div>
-              </div>
-              <div id="file-info" hidden></div>
-              <div id="encode-options" class="sw-opts" hidden>
-                <label><input type="checkbox" id="opt-urlsafe" /> URL-safe（<code>-</code> <code>_</code> 替代 <code>+</code> <code>/</code>，无填充）</label>
-                <label><input type="checkbox" id="opt-dataurl" /> 带上 data: 前缀</label>
-                <label><input type="checkbox" id="opt-wrap76" /> 按 76 字符换行（MIME / PEM 格式）</label>
-              </div>
-              <div id="encode-result" hidden></div>
-            </div>
-
-            <div class="mode-panel sw-panel" data-panel="text" id="sw-panel-text" role="tabpanel" aria-labelledby="sw-tab-text" hidden>
-              <div class="sw-row sw-row--head">
-                <div class="text-direction sw-dir">
-                  <label><input type="radio" name="text-dir" value="encode"${d.textDir === 'decode' ? '' : ' checked'} /> 文本 → Base64</label>
-                  <label><input type="radio" name="text-dir" value="decode"${d.textDir === 'decode' ? ' checked' : ''} /> Base64 → 文本</label>
-                </div>
-                <div class="encode-options sw-opts sw-opts--inline" id="text-urlsafe-wrap"${d.textDir === 'decode' ? ' hidden' : ''}>
-                  <label><input type="checkbox" id="opt-text-urlsafe" /> URL-safe 输出（<code>-</code> <code>_</code> 替代 <code>+</code> <code>/</code>，去掉填充）</label>
-                </div>
-              </div>
-              <textarea id="text-input" class="sw-textarea" rows="4" spellcheck="false" aria-label="输入文本或 Base64" placeholder="输入文本或 Base64，方向在上面切换"></textarea>
-              <div id="text-output" class="text-output sw-out" hidden></div>
-            </div>
-          </div>
-
-          <aside class="sw-spec" aria-label="工具规格">
-            <div class="sw-spec-k">规格 / Spec</div>
-            <dl class="sw-spec-dl">
-              <div><dt>工具</dt><dd>${count} 个</dd></div>
-              <div><dt>上传</dt><dd>不经过服务器</dd></div>
-              <div><dt>账号</dt><dd>不需要</dd></div>
-              <div><dt>额度</dt><dd>无</dd></div>
-              <div><dt>存储</dt><dd>仅主题偏好</dd></div>
-            </dl>
-            <p class="sw-spec-foot">无账号 · 无额度 · 无日志</p>
-          </aside>
-        </div>
-
-        <dl class="sw-meta">
-          <div class="sw-meta-row">
-            <dt>Format / 支持格式</dt>
-            <dd>任意文件。图片、PDF、Word、Excel、音视频、压缩包、纯文本都在 ${count} 个工具里。</dd>
-          </div>
-          <div class="sw-meta-row">
-            <dt>Reader / 读取方式</dt>
-            <dd class="sw-mono">FileReader · 分片</dd>
-          </div>
-          <div class="sw-meta-row">
-            <dt>Output / 输出</dt>
-            <dd class="sw-mono">Base64 · Base64URL · Data URL</dd>
-          </div>
-        </dl>
-      </div>
-    </section>
-  `;
+  return toolSection('home', '上传 / Upload', 'FILE → BASE64');
 }
 
 /** 章头：巨大编号 + 标题 + 上边框（02/03/04/05 共用） */
@@ -1819,71 +1793,7 @@ function homeWhy(): string {
 }
 
 /** 04 常见问题（保留 FAQ 文案，JSON-LD 的 FAQPage 才不会和页面对不上） */
-function homeFaq(): string {
-  const d = pageData.home;
-  return `
-    <section class="sw-sec" id="faq">
-      ${swChapterHead('04', '常见问题', 'FAQ · 四问四答')}
-      <div class="sw-faq">
-        ${d.faqs.map((f) => `<details><summary>${f.q}</summary><p>${f.a}</p></details>`).join('\n        ')}
-      </div>
-    </section>
-  `;
-}
 
-function homeFooter(): string {
-  const year = new Date().getFullYear();
-  const filings = [
-    ICP_NUMBER
-      ? `<a href="https://beian.miit.gov.cn/" rel="noopener nofollow" target="_blank">${ICP_NUMBER}</a>`
-      : '',
-    POLICE_RECORD_NUMBER
-      ? `<a href="${POLICE_RECORD_URL}" rel="noopener nofollow" target="_blank">${POLICE_RECORD_NUMBER}</a>`
-      : ''
-  ]
-    .filter(Boolean)
-    .join('<span class="sw-dot" aria-hidden="true">·</span>');
-  return `
-    <footer class="sw-foot" id="about">
-      <div class="sw-foot-top">
-        <div class="sw-foot-brand">
-          <div class="sw-fb-mark">b64file</div>
-          <p class="sw-fb-tag">由爱而生 · 浏览器里的 Base64 工具箱。转换全部在本机完成，不做账号，也不存文件。</p>
-          <a class="sw-fb-mail" href="mailto:${FEEDBACK_EMAIL}">反馈 · ${FEEDBACK_EMAIL}</a>
-        </div>
-        <div class="sw-foot-cols">
-          <div class="sw-fc">
-            <h4>转换</h4>
-            <a href="/file-to-base64/">文件转 Base64</a>
-            <a href="/base64-to-file/">Base64 转文件</a>
-            <a href="/image-to-base64/">图片转 Base64</a>
-            <a href="/pdf-to-base64/">PDF 转 Base64</a>
-          </div>
-          <div class="sw-fc">
-            <h4>开发</h4>
-            <a href="/jwt-decode/">JWT 解码</a>
-            <a href="/data-url/">Data URL 转换</a>
-            <a href="/base64url/">Base64URL</a>
-            <a href="/base64-javascript/">JavaScript 用法</a>
-          </div>
-          <div class="sw-fc">
-            <h4>站点</h4>
-            <a href="/#tools">工具索引</a>
-            <a href="/about/">关于</a>
-            <a href="/privacy/">隐私政策</a>
-            <a href="/terms/">服务条款</a>
-          </div>
-        </div>
-      </div>
-      <div class="sw-foot-bot">
-        <span>© ${year} b64file.cn</span>
-        ${filings ? `<span class="sw-filings">${filings}</span>` : ''}
-        <span>Base64 只是编码，不是加密 · 全站转换在本机完成</span>
-      </div>
-      <div class="sw-footbar" aria-hidden="true"></div>
-    </footer>
-  `;
-}
 
 export function metaTags(page: PageId): string {
   const d = pageData[page] ?? pageData.home;
