@@ -1,6 +1,7 @@
 https://b64file.cn/
 https://b64file.cn/base64-to-file/
 https://b64file.cn/file-to-base64/
+https://b64file.cn/wechat-miniprogram-base64/
 https://b64file.cn/base64-to-image/
 https://b64file.cn/image-to-base64/
 https://b64file.cn/base64-to-pdf/
@@ -22,6 +23,9 @@ https://b64file.cn/base64-to-zip/
 https://b64file.cn/base64-size-calculator/
 https://b64file.cn/base64-encrypt/
 https://b64file.cn/base64-javascript/
+https://b64file.cn/base64-to-word-garbled/
+https://b64file.cn/jwt-expiry/
+https://b64file.cn/data-url-too-long/
 https://b64file.cn/privacy/
 https://b64file.cn/about/
 https://b64file.cn/terms/

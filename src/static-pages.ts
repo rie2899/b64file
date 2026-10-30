@@ -291,7 +291,7 @@ export const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '老版本 .doc 怎么办',
-        html: '<p>97-2003 的老 .doc 不是 ZIP 结构，识别会落到「认不出的二进制文件」——但解码本身不受影响，直接下载后把扩展名改成 <code>.doc</code> 照样能用。新版 Office 和 WPS 都认。</p>'
+        html: '<p>97-2003 的老 .doc 不是 ZIP 结构，识别会落到「认不出的二进制文件」——但解码本身不受影响，直接下载后把扩展名改成 <code>.doc</code> 照样能用。新版 Office 和 WPS 都认。</p><p>还原出来打不开、或者打开一片乱码，排查顺序写在 <a href="/base64-to-word-garbled/">Base64 转 Word 打开是乱码怎么办</a>。</p>'
       }
     ],
     faqs: [
@@ -569,7 +569,7 @@ export const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '什么时候该用，什么时候别用',
-        html: '<ul><li><strong>适合</strong>：几 KB 的小图标、单文件 HTML、邮件模板、想减少请求数的关键小图</li><li><strong>别用</strong>：大图、要复用的资源、需要浏览器缓存的场景 —— Data URL 撑大 HTML 和 CSS、不能单独缓存，还比原文件大 33%</li></ul>'
+        html: '<ul><li><strong>适合</strong>：几 KB 的小图标、单文件 HTML、邮件模板、想减少请求数的关键小图</li><li><strong>别用</strong>：大图、要复用的资源、需要浏览器缓存的场景 —— Data URL 撑大 HTML 和 CSS、不能单独缓存，还比原文件大 33%</li></ul><p>已经遇到字段存不下、报超长的情况，看 <a href="/data-url-too-long/">Data URL 太长存不进数据库</a>。</p>'
       },
       {
         h2: '三个常见坑',
@@ -606,7 +606,7 @@ export const pageData: Record<PageId, PageContent> = {
       },
       {
         h2: '什么时候用得上',
-        html: '<p>排查登录态（token 里的 <code>exp</code> 是不是过期了）、确认后端下发的权限字段、看第三方回调里的 token 内容。开发调试时把 payload 看清楚，比在后端打日志快得多。</p>'
+        html: '<p>排查登录态（token 里的 <code>exp</code> 是不是过期了）、确认后端下发的权限字段、看第三方回调里的 token 内容。开发调试时把 payload 看清楚，比在后端打日志快得多。</p><p>想算清楚还剩多久过期，<code>exp</code> 的单位换算在 <a href="/jwt-expiry/">JWT 过期时间</a> 那页。</p>'
       }
     ],
     faqs: [
@@ -771,7 +771,7 @@ Buffer.from(b64, 'base64url')               // 处理 -_ 与缺失的填充</pre
     ],
     faqs: [
       { q: 'btoa 和 Base64 是一回事吗？', a: 'btoa 是浏览器提供的一个函数，做的正是 Base64 编码；它只处理 Latin-1，所以中文要自己先转字节。' },
-      { q: '大文件怎么处理？', a: '别一次性读成字符串。用 FileReader.readAsDataURL 或分块读再拼接；几十 MB 以上交给后端或命令行更合适。' },
+      { q: '大文件怎么处理？', a: '别一次性读成字符串。用 FileReader.readAsDataURL 或分块读再拼接；几十 MB 以上交给后端或命令行更合适。小程序里的写法不一样，见 <a href="/wechat-miniprogram-base64/">小程序文件转 Base64</a>。' },
       { q: '解出来是乱码？', a: '两个常见原因：拿到的是 base64url（要换字符补填充），或者原始内容本来就不是 UTF-8。' }
     ]
   },
@@ -890,7 +890,185 @@ Buffer.from(b64, 'base64url')               // 处理 -_ 与缺失的填充</pre
     mode: 'to-file',
     sections: [],
     faqs: []
+  },
+  'base64-to-word-garbled': {
+    title: 'Base64 转 Word 打开是乱码怎么办 - b64file',
+    desc: '还原出来的 docx 打不开、或者打开一片乱码，通常是三种原因：Base64 被截断、字符串被 URL 编码过、原文件其实是老版 .doc 格式。每种都给判断方法和下一步动作，照着查就行。',
+    h1: 'Base64 转 Word 打开是乱码怎么办',
+    answer:
+      '先分清是哪种乱码：在文本工具里解 docx 看到一堆 PK 开头的怪字符，那很正常；还原成文件后打不开，才去查截断、URL 编码、老 .doc 这三样。',
+    mode: 'to-file',
+    quick: [
+      '屏幕上是 PK 开头的怪字符 → 正常，docx 本来就是压缩包',
+      '打不开或提示文档损坏 → 先看 Base64 长度能不能被 4 整除',
+      '字符串里夹着 %2B %2F %3D → 先 URL 解码再解 Base64',
+      '文件头是 D0 CF 11 E0 → 97-2003 的 .doc，改后缀就能开'
+    ],
+    sections: [
+      {
+        h2: '先分清你遇到的是哪一种乱码',
+        html: `<p>两种完全不同的情况，处理方式差得远。第一种：你在文本编解码里贴了 docx 的 Base64，屏幕上跳出一堆 <code>PK</code> 开头的怪字符。这很正常，docx 是 zip 压缩包，本来就不是文字。第二种：文件已经存下来了，双击打开，Word 提示内容有问题、文档已损坏，或者正文一片方块。</p><p>前一种去 <a href="/base64-to-word/">Base64 转 Word</a> 把字节还原成 .docx 再看。后一种是文件本身的问题，往下三种原因里挑一条对。</p><p>拿不准的话，把字符串贴进工具的输入框看诊断提示：前缀、非法字符、长度余数都会列出来，比人眼扫一遍快。</p>`
+      },
+      {
+        h2: '原因一：Base64 被截断了',
+        html: `<p>占比最高的一条。复制的时候少了一段，或者接口分页返回你只拿了第一页。docx 的目录结构记在 zip 尾部，末尾缺几百字节，整份文档就废了。</p><p>看两个地方：去掉换行之后，长度能不能被 4 整除；再去掉填充符 <code>=</code>，长度除以 4 余 1 的话数据一定缺了。还有一种隐蔽情况，长度正好是 4 的倍数，可解码后的字节数比原文件小——那是中段丢了一块，长度校验发现不了。</p><p>截断的 Base64 补不回来。重新完整拿一份，或者问接口那边能不能分块返回。长度校验的细节在 <a href="/base64-decode-errors/">解码失败排查</a> 里写得更细。</p><p>数字对不上还有一层原因：有些接口返回的字符串里混了换行和空格，按字符数一算长度就偏。先去掉空白再数。</p>`
+      },
+      {
+        h2: '原因二：字符串被 URL 编码过',
+        html: `<p>从网址、GET 参数、前端埋点日志里捞出来的 Base64，经常带着 <code>%2B</code>、<code>%2F</code>、<code>%3D</code>。直接拿去解码，出来的文件头不再以 <code>PK</code> 开头，Word 当然打不开。</p><p>判断很简单：搜一下字符串里有没有百分号。有就先 URL 解码一次，再走 Base64。另一个线索是空格——<code>+</code> 在 URL 里会被当成空格，数据里出现空格基本可以确定来源被污染过，得先还原成 <code>+</code> 再说。</p><p>也有被编码两遍的，字符串里能看到 <code>%25</code>，那就要解两次。调试时把解出来的前二十个字符打印出来，是不是 <code>PK</code> 开局一眼就知道。</p>`
+      },
+      {
+        h2: '原因三：拿到的是老 .doc，不是 docx',
+        html: `<p>97-2003 的 .doc 是 OLE 复合文档，文件头是 <code>D0 CF 11 E0 A1 B1 1A E1</code>，跟 docx 的 <code>PK</code> 两码事。工具会把它归到「认不出的二进制」，这不影响解码，下载后把扩展名改回 <code>.doc</code> 就行，新版 Word 和 WPS 都认。</p><p>更麻烦的一种：有人把 .doc 直接改后缀成 .docx 发出来。那种文件用 Word 打开本身就报错，跟转不转 Base64 没关系，找发文件的人要原版。</p>`
+      }
+    ],
+    faqs: [
+      { q: '还原的 docx 能打开，但正文全是方块？', a: '跟 Base64 无关，缺字体。文档用了本机没装的字体，Word 拿方块顶上。换台装了对应字体的机器，或者让作者换字体另存一份。' },
+      { q: '工具说识别不出文件类型，还能用吗？', a: '能下载，但别指望 Word 打开。识别失败说明字节头对不上任何已知格式，多半是截断或者 URL 编码没处理，按上面三条重查一遍。' },
+      { q: 'docx 和 doc 我能自己看出来吗？', a: '看开头两个字符。能读出 <code>PK</code> 就是 docx 系（也可能是 xlsx、pptx），读出来是方块乱码基本是 .doc。' },
+      { q: 'WPS 能打开还原出来的 docx 吗？', a: '能。还原的是原始字节，Office 2016 之后的版本和 WPS 都认。打不开通常是文件在传输里坏了，不是格式问题。' }
+    ]
+  },
+  'jwt-expiry': {
+    title: 'JWT exp 怎么换算成剩余时间 - b64file',
+    desc: 'exp 是 Unix 秒数，拿它跟毫秒比较会差一千倍。手算、写代码、判断快过期都要先认清单位。时区为什么不影响结果、本机时钟慢几分钟会把倒计时带偏多少，一并说清。',
+    h1: 'JWT 的 exp 怎么换算成剩余时间',
+    answer:
+      'exp 减去当前 Unix 秒数，就是剩余秒数。exp 的单位是秒；十年内的值都是 10 位数字，看到 13 位说明签发方给的是毫秒。',
+    mode: 'text',
+    textDir: 'decode',
+    quick: [
+      '公式：<code>exp - Math.floor(Date.now() / 1000)</code>',
+      'exp 是秒级时间戳，13 位就是毫秒，除 1000 取整',
+      '时区不影响结果，本机时钟不准才会算错',
+      '「快过期」自己定，常见是剩 60 秒开始刷新'
+    ],
+    sections: [
+      {
+        h2: 'exp 就是一个 Unix 秒数',
+        html: `<p>RFC 7519 里 exp 的类型叫 NumericDate：从 1970-01-01T00:00:00Z 起算的秒数，不跳闰秒。它没有格式，就是一串整数，塞在 payload 的 JSON 里。</p><p>看一眼位数能判断单位。2026 年的秒级时间戳是 10 位，2038 年之后变成 11 位；13 位是毫秒。JavaScript 的 <code>Date.now()</code>、Java 的 <code>System.currentTimeMillis()</code> 默认都给毫秒，直接拿去跟 exp 比，差一千倍。</p><p>exp 在规范里是可选声明。token 里没有这个字段，不代表永不过期，有效期怎么算由签发方定。</p>`
+      },
+      {
+        h2: '手算和写代码是同一件事',
+        html: `<pre class="code-block">const exp = 1767225600;                    // payload 里的 exp
+const now = Math.floor(Date.now() / 1000); // 当前秒数
+const left = exp - now;                    // 剩余秒数，负数即已过期
+const when = new Date(exp * 1000);         // 换成可读时间</pre><p><code>* 1000</code> 只在构造 Date 那一步用，别把乘过的值拿回去做比较。想显示成北京时间，交给 <code>toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })</code>。</p><p>同族的还有 <code>iat</code>（签发时间）和 <code>nbf</code>（生效时间），单位一样是秒。想看 payload 里还写了什么，用 <a href="/jwt-decode/">JWT 解码</a> 拆开。</p><p>要显示成「还剩 12 分钟」这种，把剩余秒数除 60 取整就行。别拿两个 Date 相减再除 1000，多绕一步，还容易把时区又算进去。</p>`
+      },
+      {
+        h2: '时区不用管，时钟得管',
+        html: `<p>服务器在 UTC，你在东八区，算出来的剩余秒数一模一样。时间戳本身不带时区，差 8 小时只影响你怎么显示，不影响怎么比。</p><p>会把结果带偏的是本机时钟。手机或电脑慢了三分钟，倒计时就跟着错三分钟，token 明明还有效，前端却判成过期。之前排查过一个线上问题：同一批用户里只有一部分人反复被踢，最后定位到那批设备的 NTP 没同步。</p><p>校准办法很土但管用：读接口响应头里的 <code>Date</code>，跟本地时间对一下，差几十秒以上就别信本地计算了。</p><p>还有一种：本机时间没问题，服务端那边刚做过时间同步，签发时间和你的本地时间对不上。这类只能看服务端日志里的签发时间。</p>`
+      },
+      {
+        h2: '过期和快过期，标准自己定',
+        html: `<p>服务端校验 exp 一般留一点容差，应付网络延迟和时钟漂移。Node 的 jsonwebtoken 有个 <code>clockTolerance</code> 选项，单位是秒；其它语言的库大多也有类似参数。你在前端卡着 exp 那一秒判断，可能比服务端早一步。</p><p>「快过期」没有统一答案。常见做法是剩余不到 60 秒就静默刷新，用户点按钮之前先换好。刷新接口要防并发——页面同时发五个请求，别刷五次 token，加个标记位排队。</p><p>前端算出来的过期只影响体验。鉴权必须在服务端做，payload 是明文，谁都能改 exp，签名才防篡改。</p><p>刷新失败要能退回登录页，别让用户卡在一个转圈的界面上。401 到手先看响应体，有些服务端把「已过期」和「签名不对」分开返回，处理方式不一样。</p>`
+      }
+    ],
+    faqs: [
+      { q: 'exp 是秒还是毫秒？', a: '秒。RFC 7519 的 NumericDate 定义就是秒。拿到 13 位数字，说明签发方给了毫秒，除以 1000 向下取整再用。' },
+      { q: 'token 里没有 exp，是不是永不过期？', a: '规范里 exp 可选，缺省表示这个字段不参与过期判断。实际会不会过期由签发方决定，看它有没有别的机制。' },
+      { q: '本地时间和服务器差几分钟，影响大吗？', a: '差多少就错多少。差三分钟，倒计时就少三分钟，可能提前踢人，也可能放过已经过期的 token。先用响应头的 Date 对齐。' },
+      { q: 'payload 那一段要自己解吗？', a: '不用。payload 是 base64url，<a href="/base64url/">Base64URL 工具</a>能直接解开，省得自己处理 <code>-_</code> 和缺失的填充。' }
+    ]
+  },
+  'data-url-too-long': {
+    title: 'Data URL 太长存不进数据库怎么办 - b64file',
+    desc: 'Base64 会把体积撑大约三分之一，一张几 MB 的图转成 Data URL 就是几 MB 文本。字段选 TEXT 还是 LONGTEXT、行长度上限卡在哪、什么时候该改存对象存储，这里按字节算一遍，附三种拆法的代价。',
+    h1: 'Data URL 太长存不进数据库怎么办',
+    answer:
+      'Base64 是原始字节的 4/3，再加几十字节前缀。超过字段上限就换 MEDIUMTEXT，超过几 MB 就别存库了，扔对象存储只留 URL。',
+    mode: 'to-file',
+    quick: [
+      '长度 ≈ 原始字节 × 4/3，末尾填充符也要算',
+      'MySQL 的 TEXT 上限 65,535 字节，按字节不按字符',
+      '单行 65,535 字节，VARCHAR 要跟整行所有列抢',
+      '单条超过几百 KB 就别内联，改存对象存储'
+    ],
+    sections: [
+      {
+        h2: '长度是怎么涨上去的',
+        html: `<p>Base64 每 3 个字节编成 4 个字符，体积变成 4/3，涨三分之一。一张 200 KB 的图，编完是 267 KB 左右的纯文本，外面再套 <code>data:image/png;base64,</code> 这层声明，多几十字节。</p><p>膨胀是编码方式决定的，压不下去。字符表只有 64 个符号，一个字符最多带 6 bit 信息，剩下两位是固定开销。</p><p>粗算公式 <code>4 * Math.ceil(bytes / 3)</code>，末尾的填充符已经算在里面。要精确到字节，用 <a href="/base64-size-calculator/">体积换算</a> 对一下。</p>`
+      },
+      {
+        h2: '字段该选哪个',
+        html: `<p>MySQL 的上限按字节算，跟字符集无关。TEXT 的上限是 65,535 字节，按字节卡，不按字卡，这点最容易混。</p><table class="simple-table"><tr><th>类型</th><th>上限（字节）</th><th>大约能装</th></tr><tr><td><code>TINYTEXT</code></td><td>255</td><td>一张像样的小图标都不够</td></tr><tr><td><code>TEXT</code></td><td>65,535</td><td>约 48 KB 的原图</td></tr><tr><td><code>MEDIUMTEXT</code></td><td>16,777,215</td><td>约 12 MB 的原图</td></tr><tr><td><code>LONGTEXT</code></td><td>4,294,967,295</td><td>4 GB，够用但不划算</td></tr></table><p>看着 LONGTEXT 一劳永逸，卡你的其实是另外两处。一是单行 65,535 字节的行长度上限：TEXT 列在行里只占 9 到 12 字节的指针，不占这条额度；VARCHAR 列要跟整行所有列抢，写大了直接 Row size too large。二是 <code>max_allowed_packet</code>，MySQL 8.0 起服务端默认 64 MB，整条 SQL 超过它就报 Packet too large。</p><p>PostgreSQL 那边松一点，<code>text</code> 不用声明长度，单个字段的硬上限是 1 GB。</p><p>还有个常见误解：以为换成 utf8mb4 就能多存。字符集只决定一个字符占几个字节，字节上限一点没动。</p>`
+      },
+      {
+        h2: '拆开存，代价在哪',
+        html: `<p>按 64 KB 切片、存进关联表，确实能绕过字段上限。代价在读取侧：每次都要把碎片拼回来，排序、导出、备份全变麻烦，库里还躺着一堆看不懂的字符串。</p><p>更常见的选择是把文件放对象存储，库里只留 key 或 URL。库小了，备份快了，图片还能挂 CDN 吃缓存。迁移时也省事，换存储桶比改表结构简单。</p><p>中间路线是存之前先压一遍。gzip 对 Base64 文本有效，重复度高的 PDF、JSON 能压掉一半以上，照片基本压不动。</p><p>客户端统计长度常用字符数，落库按字节卡，两边对不上就会出现「接口说没超、数据库说超长」。写入前统一按字节算一遍。</p><p>拆列也算一种拆法：大字段单独建一张表，主表只留摘要和状态，列表页查询时就不会顺手把几 MB 的文本一起拉出来。</p>`
+      },
+      {
+        h2: '什么时候该放弃内联',
+        html: `<p>三个信号：单条记录超过几百 KB；同一条数据被反复读；需要浏览器缓存或 CDN 加速。命中任意一条，内联就不划算了。</p><p>Data URL 内联适合的场景其实很窄：几 KB 的小图标、单文件 HTML、邮件模板。图片过了 10 KB，省下的那次请求，抵不过体积膨胀带来的传输开销。</p><p>非要在库里留着，写入前先算长度：编码后的字节数超过字段上限就在应用层拒掉，别等数据库抛异常再回头猜。</p><p><a href="/data-url/">Data URL 生成与解析</a> 那页能直接看到前缀结构，判断一段字符串是不是内联资源很快。</p><p>对象存储还有个附带好处：URL 能设过期时间，访问权限不必绑在数据库账号上。</p>`
+      }
+    ],
+    faqs: [
+      { q: 'TEXT 到底能存多少汉字？', a: '65,535 字节。utf8mb4 下一个汉字占 3 或 4 字节，实际一万六千字上下。存中文别按字符数估。' },
+      { q: '报 Packet too large 是什么原因？', a: '一条 SQL 或一个数据包超过了 <code>max_allowed_packet</code>。MySQL 8.0 服务端默认 64 MB，可以调，单包上限 1 GB。' },
+      { q: 'VARCHAR 能不能存 Base64？', a: '能存，但 VARCHAR 跟同一行的所有列共享 65,535 字节，塞大段 Base64 会把整行顶爆，报 Row size too large。' },
+      { q: '存进数据库的 Base64 会自动压缩吗？', a: '不会。InnoDB 的行格式压缩、页压缩都要显式开启，默认不压。想省空间自己先 gzip 一遍。' }
+    ]
+  },
+  'wechat-miniprogram-base64': {
+    title: '微信小程序文件转 Base64 怎么写 - b64file',
+    desc: 'readFile 传 encoding: "base64" 就能直接拿到字符串，单个文件上限 100M。路径一般来自 chooseMessageFile 的临时文件，超过这个量得靠分片读。文末附错误码对照表，1300002、1300202 这类报错照着查就行，省得在文档里翻半天。',
+    h1: '微信小程序里怎么把文件转成 Base64',
+    answer:
+      '调 <code>wx.getFileSystemManager().readFile</code>，传 <code>encoding: "base64"</code>，回调里的 <code>res.data</code> 就是 Base64 字符串。单个文件上限 100M。',
+    mode: 'to-file',
+    quick: [
+      'readFile 传 encoding: base64，不传拿到的是 ArrayBuffer',
+      '单个文件上限 100M，超了报 1300202',
+      'chooseMessageFile 给的 tempFiles[0].path 就是本地路径',
+      '分片用 position / length，切片长度取 3 的倍数'
+    ],
+    sections: [
+      {
+        h2: '最短能跑的一段',
+        html: `<pre class="code-block">const fs = wx.getFileSystemManager();
+fs.readFile({
+  filePath: tempFilePath,        // 本地路径，不能是 http 地址
+  encoding: 'base64',
+  success(res) {
+    console.log(res.data);       // Base64 字符串
+  },
+  fail(err) {
+    console.error(err.errCode, err.errMsg);
   }
+});</pre><p><code>encoding</code> 的合法值里有 base64，也有 utf8、hex、binary 这些。这个参数不传，读出来是 ArrayBuffer，你自己再处理二进制。</p><p>小程序里没有 <code>window.btoa</code>，浏览器那套写法搬不过来。老接口 <code>wx.arrayBufferToBase64</code> 官方已经不推荐，新代码让 readFile 直接输出 base64 就行，少一步转换。</p><p><code>fail</code> 回调里 <code>errCode</code> 是数字、<code>errMsg</code> 是字符串，两个都打进日志，回头查的时候省事。</p>`
+      },
+      {
+        h2: '文件从哪来',
+        html: `<p>从聊天记录里选文件用 <code>wx.chooseMessageFile</code>，基础库 2.5.0 起支持。</p><pre class="code-block">wx.chooseMessageFile({
+  count: 1,
+  type: 'file',
+  success(res) {
+    const f = res.tempFiles[0];   // f.path / f.name / f.size / f.type
+  }
+});</pre><p>每项带 <code>path</code>、<code>name</code>、<code>size</code>、<code>type</code>，那个 path 是本地临时文件路径，直接喂给 readFile。2.6.0 起还能用 <code>extension</code> 按后缀过滤，比如只收 <code>['pdf']</code>。</p><p>另一条来路是 <code>wx.downloadFile</code> 的 <code>tempFilePath</code>，同样能读。临时文件只在当前生命周期内保证有效，重启之后不一定还在。要留着就 <code>saveFile</code> 或 <code>copyFile</code> 转成本地缓存文件、本地用户文件，这两类加起来最多 200MB。</p><p>想造个测试文件，往 <code>wx.env.USER_DATA_PATH</code> 写一个再读回来，链路跟真机一致，比在开发者工具里手动传文件稳。</p><p><code>type</code> 传 image 或 video 时拿到的也是临时路径，读法跟 file 一模一样，代码不用改。</p>`
+      },
+      {
+        h2: '大文件：100M 上限和分片读',
+        html: `<p>readFile 单个文件上限 100M，超了直接抛 1300202。这个数字一般不挡路，卡人的是内存：100M 的文件编成 Base64 就是 133M 个字符，一次性塞进运行时，中低端安卓机容易直接闪退。</p><p>分片读靠 <code>position</code> 和 <code>length</code>，单位都是字节，区间左闭右开，基础库 2.10.0 起支持。</p><pre class="code-block">fs.readFile({
+  filePath: tempFilePath,
+  encoding: 'base64',
+  position: offset,              // 起始字节
+  length: 3 * 1024 * 1024,       // 这一片读多少字节
+  success(res) { /* res.data 是这一片的 base64 */ }
+});</pre><p>切片长度取 3 的倍数。Base64 每 3 个字节编成 4 个字符，长度不是 3 的倍数，每片末尾都会补 <code>=</code>，拼起来中间夹着填充符，整段解不回去。最后一片不受这条约束。</p><p>几 MB 以内的文件整读就够了，别为了分片把代码写复杂。分片适合边读边传、上传前要过一道处理这类场景。</p><p>分片读出来的每一段都能单独解，拼的是编码结果，别想着先拼二进制再整体转一次。</p><p>真要传大文件，更省事的路子是 <code>wx.uploadFile</code> 直接传文件，根本不用在客户端转 Base64。多一道转换就多一份内存，还多一段可能出错的代码。</p>`
+      },
+      {
+        h2: '报错对照',
+        html: `<table class="simple-table"><tr><th>错误码</th><th>含义</th><th>先查什么</th></tr><tr><td>1300002</td><td>文件不存在</td><td>临时路径是否已失效、拼路径时少没少斜杠</td></tr><tr><td>1300021</td><td>路径是个目录</td><td>filePath 传成了文件夹</td></tr><tr><td>1300202</td><td>超过 100M 或存储不足</td><td>文件大小、本地空间</td></tr><tr><td>1300203</td><td>base64 编码失败</td><td>参数是否合法</td></tr><tr><td>1300005</td><td>读写异常</td><td>文件是否被占用</td></tr></table><p>1300002 出现最多，八成是临时路径已经失效，或者拼接时少了斜杠。先调 <code>fs.access</code> 确认文件在，再去读。</p><p>码值以 <code>errCode</code> 为准。同一件事的 <code>errMsg</code> 文字会随基础库版本微调，用文字做判断迟早踩坑。</p><p>本机想验证编出来的 Base64 对不对，贴进 <a href="/base64-to-file/">Base64 转文件</a> 还原一次最快；浏览器里的对照写法在 <a href="/base64-javascript/">JavaScript 用法</a> 那页。</p>`
+      }
+    ],
+    faqs: [
+      { q: 'readFile 拿到的是字符串还是 ArrayBuffer？', a: '看 encoding。传了 base64 就是字符串，不传就是 ArrayBuffer，两种都能用，看下游要什么。' },
+      { q: 'Base64 能直接传给 wx.request 吗？', a: '能，当成普通字符串放进 body。体积会涨三分之一，接口自己的长度限制该看还得看。' },
+      { q: '临时路径能当图片地址用吗？', a: '能，<code>image</code> 组件的 src 直接填本地路径就显示。别拼成 http 请求发出去，那是本地文件。' },
+      { q: '开发者工具正常，真机报错？', a: '先查两处：本地路径的协议在开发者工具和真机上不一样，别硬编码；文件可能已经被清理。用 access 先探一下存在性。' }
+    ]
+  },
 };
 
 function escapeHtml(s: string): string {
@@ -915,6 +1093,22 @@ const CONTENT_ONLY_PAGES = new Set(['privacy', 'about', 'terms', '404']);
 export function renderShell(currentPage: PageId): string {
   const showTool = !CONTENT_ONLY_PAGES.has(currentPage);
   const d = pageData[currentPage] ?? pageData.home;
+  // 首页走瑞士国际主义版式（src/home-swiss.css）：结构、编号、对齐都和工具页不同，
+  // 所以整棵子树单独渲染，工具页仍旧走下面那套模板，一个字节都不动。
+  if (currentPage === 'home') {
+    return `
+    ${homeHeader()}
+    <main class="sw-main">
+      ${homeHero()}
+      ${homeUpload()}
+      ${homeToolsIndex()}
+      ${homeWhy()}
+      ${homeFaq()}
+      ${relatedLinks('home', '05')}
+    </main>
+    ${homeFooter()}
+  `;
+  }
   const crumbs =
     currentPage !== 'home' && currentPage !== '404'
       ? `<nav class="crumbs" aria-label="面包屑"><a href="/">❯ 首页</a> / <span>${d.h1}</span></nav>`
@@ -1116,6 +1310,10 @@ const SHORT_LABEL: Record<string, string> = {
   'base64-encrypt': '加密解密',
   'base64-javascript': 'JS 用法',
   'jwt-decode': 'JWT 解码',
+  'jwt-expiry': 'JWT 过期时间',
+  'base64-to-word-garbled': 'Word 乱码排查',
+  'data-url-too-long': 'Data URL 太长',
+  'wechat-miniprogram-base64': '小程序 Base64',
   'base64-decode-errors': '解码失败排查',
   about: '关于',
   privacy: '隐私政策',
@@ -1148,6 +1346,10 @@ const PAGE_GROUP: Record<string, PageGroup> = {
   'base64-to-text': 'text',
   base64url: 'text',
   'jwt-decode': 'text',
+  'jwt-expiry': 'text',
+  'base64-to-word-garbled': 'decode',
+  'data-url-too-long': 'decode',
+  'wechat-miniprogram-base64': 'encode',
   'file-to-base64': 'encode',
   'image-to-base64': 'encode',
   'pdf-to-base64': 'encode',
@@ -1181,7 +1383,7 @@ const RELATED_RING: string[] = RELATED_GROUP_ORDER.flatMap((gr) =>
     .map((p) => p.id)
 );
 
-function relatedLinks(currentPage: PageId): string {
+function relatedLinks(currentPage: PageId, chapterNo?: string): string {
   const byId = new Map(
     (pageRegistry as Array<{ id: string; path: string; hide?: boolean }>)
       .filter((p) => !p.hide)
@@ -1217,6 +1419,18 @@ function relatedLinks(currentPage: PageId): string {
       return `<div class="related-row"><span class="rg-label">${label}</span><div class="related-links">${out}</div></div>`;
     })
     .join('\n      ');
+
+  // 首页用瑞士版式，给它一个章头编号；工具页照旧（chapterNo 为空）
+  if (chapterNo) {
+    return `
+    <section class="sw-sec" id="related">
+      ${swChapterHead(chapterNo, '相关工具与指南', 'Related · 同一引擎的其它入口')}
+      <div class="sw-related">
+      ${body}
+      </div>
+    </section>
+  `;
+  }
 
   return `
     <section class="section">
@@ -1283,6 +1497,394 @@ function footer(currentPage: PageId): string {
   `;
 }
 
+/* ==========================================================================
+   首页 · 瑞士国际主义版式
+   结构：5px 红条 / 导航 → Hero → 01 上传区（整行）→ 02 工具索引
+        → 03 为什么用它 → 04 FAQ → 05 相关入口 → 页脚（上下各 5px 红条）
+   样式全部在 src/home-swiss.css 里以 body[data-page='home'] 限定，
+   工具页共用的 styles.css 不受影响。
+   ========================================================================== */
+
+const HOME_REPO_URL = 'https://github.com/rie2899/b64file';
+
+/** 02 工具索引主表：编号 / 名称 / 说明 / 路径，前两行为核心工具（红标） */
+const HOME_INDEX_CORE: Array<{ id: string; name: string; desc: string }> = [
+  {
+    id: 'file-to-base64',
+    name: '文件转 Base64',
+    desc: '任意文件读成 Base64 文本，可切换换行、URL-safe，或直接输出 Data URL。'
+  },
+  {
+    id: 'base64-to-file',
+    name: 'Base64 转文件',
+    desc: '粘贴字符串，还原成原始文件并下载。自动识别类型，文件名可以改。'
+  },
+  {
+    id: 'image-to-base64',
+    name: '图片转 Base64',
+    desc: 'PNG、JPG、SVG、WebP 转成 data URL，直接贴进 CSS 的 background。'
+  },
+  {
+    id: 'base64-to-image',
+    name: 'Base64 转图片',
+    desc: '先在页面上预览，确认没花再另存为 PNG 或 JPG，不用先落盘。'
+  },
+  {
+    id: 'pdf-to-base64',
+    name: 'PDF 转 Base64',
+    desc: '把 PDF 编码进邮件、iframe 或者接口请求体，附带 MIME 前缀。'
+  },
+  {
+    id: 'jwt-decode',
+    name: 'JWT 解码',
+    desc: '拆开 header 与 payload，格式化 JSON，并标出 exp 还有多久到期。'
+  },
+  {
+    id: 'data-url',
+    name: 'Data URL 转换',
+    desc: '在 data: 前缀和纯 Base64 之间互相剥离、拼回，不丢 MIME。'
+  },
+  {
+    id: 'base64-size-calculator',
+    name: 'Base64 大小计算器',
+    desc: '输入原始体积，算出编码后的字节数和膨胀比例，含换行开销。'
+  }
+];
+
+/** 02 续编：09–23 */
+const HOME_INDEX_REST: Array<{ id: string; name: string }> = [
+  { id: 'base64-to-pdf', name: 'Base64 转 PDF' },
+  { id: 'base64-to-word', name: 'Base64 转 Word' },
+  { id: 'base64-to-excel', name: 'Base64 转 Excel' },
+  { id: 'base64-to-pptx', name: 'Base64 转 PPTX' },
+  { id: 'base64-to-svg', name: 'Base64 转 SVG' },
+  { id: 'base64-to-mp3', name: 'Base64 转 MP3' },
+  { id: 'base64-to-video', name: 'Base64 转视频' },
+  { id: 'base64-to-zip', name: 'Base64 转 ZIP' },
+  { id: 'base64-to-txt', name: 'Base64 转 TXT' },
+  { id: 'base64-to-text', name: 'Base64 转文本' },
+  { id: 'base64url', name: 'Base64URL / JWT' },
+  { id: 'base64-encrypt', name: 'Base64 加解密' },
+  { id: 'json-to-file', name: 'JSON 转文件' },
+  { id: 'base64-decode-errors', name: '解码错误诊断' },
+  { id: 'base64-javascript', name: 'JavaScript 用法' }
+];
+
+/** 03 为什么用它：三条，4/4/4 栏 */
+const HOME_WHY: Array<{ no: string; title: string; body: string }> = [
+  {
+    no: '01',
+    title: '文件不上传',
+    body: '转换跑在浏览器的 FileReader、Blob 和 TextDecoder 上。页面加载完之后不再发请求，文件不经过服务器，也不会留在任何日志里。'
+  },
+  {
+    no: '02',
+    title: '不用注册，也没有额度',
+    body: '没有账号、没有每日次数、没有下载前的 30 秒倒计时。打开页面就能转，关掉就走，本地除了主题偏好不存任何东西。'
+  },
+  {
+    no: '03',
+    title: '结果直接能拿走',
+    body: 'Base64 文本一键复制或存成 .txt，文件直接下载。要嵌进代码时，Data URL 已经带好 MIME 前缀，粘贴即用。'
+  }
+];
+
+/** 工具总数（从分组表里数，别写死） */
+function homeToolCount(): number {
+  return Object.keys(PAGE_GROUP).filter((id) => PAGE_GROUP[id] !== 'info' && PAGE_GROUP[id] !== 'home').length;
+}
+
+function homeHeader(): string {
+  return `
+    <header class="sw-header">
+      <div class="sw-topbar" aria-hidden="true"></div>
+      <nav class="sw-nav" aria-label="主导航">
+        <a class="sw-brand" href="/">b64file</a>
+        <span class="sw-badge">浏览器内转换</span>
+        <div class="sw-nav-links">
+          <a href="#tools">工具</a>
+          <a href="#why">用法</a>
+          <a href="#about">关于</a>
+        </div>
+        <div class="sw-nav-end">
+          <button id="theme-toggle" class="sw-icon-btn" type="button" aria-label="切换主题">🌙</button>
+          <a class="sw-gh" href="${HOME_REPO_URL}" target="_blank" rel="noopener">GitHub<span class="sw-gh-ar" aria-hidden="true">↗</span></a>
+        </div>
+      </nav>
+    </header>
+  `;
+}
+
+function homeHero(): string {
+  const count = homeToolCount();
+  return `
+    <section class="sw-hero">
+      <p class="sw-eyebrow">
+        <span class="sw-sq" aria-hidden="true"></span>
+        <span>BASE64 工具集</span>
+        <span class="sw-sep" aria-hidden="true">/</span>
+        <span>${count} 个工具</span>
+        <span class="sw-sep" aria-hidden="true">/</span>
+        <span>全在浏览器内</span>
+      </p>
+      <h1>文件转 Base64，Base64 转回文件。</h1>
+      <p class="sw-sub">${count} 个工具，覆盖图片、PDF、Word、Excel、<span class="sw-nb">音视频</span>和 JWT。文件不上传：转换在<span class="sw-nb">你的浏览器里</span>跑，也<span class="sw-nb">不用注册</span>。</p>
+      <p class="sw-note"><span class="sw-note-key">注</span><span>Base64 把每 3 个字节编成 4 个 ASCII 字符，体积增加<span class="sw-nb">约 33%</span>；剩下要选的只有换行方式，和要不要 URL-safe。</span></p>
+    </section>
+  `;
+}
+
+/**
+ * 01 上传区。整行宽度（不跟任何东西并排），标题在上、操作框在下。
+ * 三个 tab 对应 tool.ts 的三个模式；默认方向沿用 pageData.home.mode（to-file）。
+ * 所有 DOM id 与 class 都沿用原首页那一套，tool.ts 一行都不用改。
+ */
+function homeUpload(): string {
+  const d = pageData.home;
+  const count = homeToolCount();
+  return `
+    <section class="sw-upload">
+      <div class="sw-cap">
+        <span class="sw-cap-no">01</span>
+        <span class="sw-cap-title">上传 / Upload</span>
+        <span class="sw-cap-right">FILE → BASE64</span>
+      </div>
+      <div class="sw-box" id="tool" data-default-mode="${d.mode}">
+        <div class="sw-tabs" role="tablist" aria-label="转换模式">
+          <button class="sw-tab mode-tab" id="sw-tab-to-file" data-mode="to-file" role="tab" type="button" aria-selected="true" aria-controls="sw-panel-to-file">粘贴 Base64</button>
+          <button class="sw-tab mode-tab" id="sw-tab-to-base64" data-mode="to-base64" role="tab" type="button" aria-selected="false" aria-controls="sw-panel-to-base64">上传文件</button>
+          <button class="sw-tab mode-tab" id="sw-tab-text" data-mode="text" role="tab" type="button" aria-selected="false" aria-controls="sw-panel-text">文本编解码</button>
+          <span class="sw-tabs-note">在本机读取 · 不上传</span>
+        </div>
+
+        <div class="sw-frame">
+          <div class="sw-frame-main">
+            <div class="mode-panel sw-panel" data-panel="to-file" id="sw-panel-to-file" role="tabpanel" aria-labelledby="sw-tab-to-file">
+              <div class="sw-panel-head"><span>粘贴 / Paste</span><span>Base64 · Data URL · JSON</span></div>
+              <textarea id="b64-input" class="sw-textarea" rows="6" spellcheck="false" aria-label="粘贴 Base64 或文件数据" placeholder="粘贴 Base64、data: 开头的一段、或整段接口 JSON"></textarea>
+              <div class="sw-row">
+                <button id="b64-sample" class="sw-btn sw-btn--ghost" type="button">载入示例</button>
+                <button id="b64-load-file" class="sw-btn sw-btn--ghost" type="button">导入 .txt / .b64</button>
+                <button id="b64-clear" class="sw-btn sw-btn--ghost" type="button">清空</button>
+                <input type="file" id="b64-file-input" accept=".txt,.b64,.text,text/plain" hidden />
+                <span class="sw-hint">粘贴即自动处理 · Ctrl+Enter 立刻转换 · Esc 清空</span>
+              </div>
+              <div id="b64-diagnosis" class="diagnosis" hidden></div>
+              <div id="b64-result" class="result-area" hidden></div>
+            </div>
+
+            <div class="mode-panel sw-panel" data-panel="to-base64" id="sw-panel-to-base64" role="tabpanel" aria-labelledby="sw-tab-to-base64" hidden>
+              <div id="drop-zone" class="drop-zone sw-drop">
+                <div class="sw-drop-main">
+                  <div class="sw-drop-head"><span>Drag &amp; drop / 拖拽区</span><span>支持多选</span></div>
+                  <svg class="sw-drop-icon drop-icon" width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+                    <path d="M15 3v14" stroke="currentColor" stroke-width="1.5"></path>
+                    <path d="M9 11.5l6 6 6-6" stroke="currentColor" stroke-width="1.5"></path>
+                    <path d="M4.5 24.5h21" stroke="currentColor" stroke-width="1.5"></path>
+                  </svg>
+                  <p class="sw-drop-title">把文件拖到这里</p>
+                  <p class="sw-drop-sub">或者直接选，支持一次选多个</p>
+                  <button id="pick-file" class="sw-btn sw-btn--red" type="button">选择文件</button>
+                  <input type="file" id="file-input" hidden />
+                </div>
+              </div>
+              <div id="file-info" hidden></div>
+              <div id="encode-options" class="sw-opts" hidden>
+                <label><input type="checkbox" id="opt-urlsafe" /> URL-safe（<code>-</code> <code>_</code> 替代 <code>+</code> <code>/</code>，无填充）</label>
+                <label><input type="checkbox" id="opt-dataurl" /> 带上 data: 前缀</label>
+                <label><input type="checkbox" id="opt-wrap76" /> 按 76 字符换行（MIME / PEM 格式）</label>
+              </div>
+              <div id="encode-result" hidden></div>
+            </div>
+
+            <div class="mode-panel sw-panel" data-panel="text" id="sw-panel-text" role="tabpanel" aria-labelledby="sw-tab-text" hidden>
+              <div class="sw-row sw-row--head">
+                <div class="text-direction sw-dir">
+                  <label><input type="radio" name="text-dir" value="encode"${d.textDir === 'decode' ? '' : ' checked'} /> 文本 → Base64</label>
+                  <label><input type="radio" name="text-dir" value="decode"${d.textDir === 'decode' ? ' checked' : ''} /> Base64 → 文本</label>
+                </div>
+                <div class="encode-options sw-opts sw-opts--inline" id="text-urlsafe-wrap"${d.textDir === 'decode' ? ' hidden' : ''}>
+                  <label><input type="checkbox" id="opt-text-urlsafe" /> URL-safe 输出（<code>-</code> <code>_</code> 替代 <code>+</code> <code>/</code>，去掉填充）</label>
+                </div>
+              </div>
+              <textarea id="text-input" class="sw-textarea" rows="4" spellcheck="false" aria-label="输入文本或 Base64" placeholder="输入文本或 Base64，方向在上面切换"></textarea>
+              <div id="text-output" class="text-output sw-out" hidden></div>
+            </div>
+          </div>
+
+          <aside class="sw-spec" aria-label="工具规格">
+            <div class="sw-spec-k">规格 / Spec</div>
+            <dl class="sw-spec-dl">
+              <div><dt>工具</dt><dd>${count} 个</dd></div>
+              <div><dt>上传</dt><dd>不经过服务器</dd></div>
+              <div><dt>账号</dt><dd>不需要</dd></div>
+              <div><dt>额度</dt><dd>无</dd></div>
+              <div><dt>存储</dt><dd>仅主题偏好</dd></div>
+            </dl>
+            <p class="sw-spec-foot">无账号 · 无额度 · 无日志</p>
+          </aside>
+        </div>
+
+        <dl class="sw-meta">
+          <div class="sw-meta-row">
+            <dt>Format / 支持格式</dt>
+            <dd>任意文件。图片、PDF、Word、Excel、音视频、压缩包、纯文本都在 ${count} 个工具里。</dd>
+          </div>
+          <div class="sw-meta-row">
+            <dt>Reader / 读取方式</dt>
+            <dd class="sw-mono">FileReader · 分片</dd>
+          </div>
+          <div class="sw-meta-row">
+            <dt>Output / 输出</dt>
+            <dd class="sw-mono">Base64 · Base64URL · Data URL</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  `;
+}
+
+/** 章头：巨大编号 + 标题 + 上边框（02/03/04/05 共用） */
+function swChapterHead(no: string, title: string, meta: string, extra = ''): string {
+  return `
+    <div class="sw-sec-head">
+      <div class="sw-sec-num" aria-hidden="true">${no}</div>
+      <div class="sw-sec-main">
+        <h2 class="sw-sec-title">${title}</h2>
+        <p class="sw-sec-meta">${meta}${extra}</p>
+      </div>
+    </div>
+  `;
+}
+
+function homeToolsIndex(): string {
+  const count = homeToolCount();
+  const core = HOME_INDEX_CORE.map((t, i) => {
+    const no = String(i + 1).padStart(2, '0');
+    const path = pagePaths[t.id] ?? '/';
+    return `<a class="sw-tr${i < 2 ? ' sw-tr--core' : ''}" href="${path}">
+          <span class="sw-flag" aria-hidden="true"></span>
+          <span class="sw-num">${no}</span>
+          <span class="sw-name">${t.name}</span>
+          <span class="sw-desc">${t.desc}</span>
+          <span class="sw-path">${path}</span>
+          <span class="sw-arrow" aria-hidden="true">→</span>
+        </a>`;
+  }).join('\n        ');
+
+  const rest = HOME_INDEX_REST.map((t, i) => {
+    const no = String(HOME_INDEX_CORE.length + i + 1).padStart(2, '0');
+    const path = pagePaths[t.id] ?? '/';
+    return `<li><a href="${path}"><span class="sw-rn">${no}</span><span class="sw-rnm">${t.name}</span><span class="sw-rp">${path}</span></a></li>`;
+  }).join('\n          ');
+
+  return `
+    <section class="sw-sec" id="tools">
+      ${swChapterHead('02', '工具索引', `Index · ${HOME_INDEX_CORE.length} 个主工具 + 其余 ${HOME_INDEX_REST.length} 个 · 路径即地址`, '<span class="sw-legend"><i aria-hidden="true"></i>最常用</span>')}
+      <div class="sw-tbl">
+        <div class="sw-tr sw-tr--h" aria-hidden="true">
+          <span></span><span>№</span><span>工具</span><span>说明</span><span>路径</span><span></span>
+        </div>
+        ${core}
+      </div>
+
+      <div class="sw-rest">
+        <div class="sw-rest-head">
+          <h3>其余 ${HOME_INDEX_REST.length} 个</h3>
+          <span>${String(HOME_INDEX_CORE.length + 1).padStart(2, '0')} — ${count}</span>
+        </div>
+        <ul class="sw-rest-grid">
+          ${rest}
+        </ul>
+      </div>
+    </section>
+  `;
+}
+
+function homeWhy(): string {
+  return `
+    <section class="sw-sec" id="why">
+      ${swChapterHead('03', '为什么用它', 'Why · 三条，够用就行')}
+      <div class="sw-why-grid">
+        ${HOME_WHY.map(
+          (w) => `<article class="sw-why">
+          <span class="sw-why-num">${w.no}</span>
+          <h3>${w.title}</h3>
+          <p>${w.body}</p>
+        </article>`
+        ).join('\n        ')}
+      </div>
+    </section>
+  `;
+}
+
+/** 04 常见问题（保留 FAQ 文案，JSON-LD 的 FAQPage 才不会和页面对不上） */
+function homeFaq(): string {
+  const d = pageData.home;
+  return `
+    <section class="sw-sec" id="faq">
+      ${swChapterHead('04', '常见问题', 'FAQ · 四问四答')}
+      <div class="sw-faq">
+        ${d.faqs.map((f) => `<details><summary>${f.q}</summary><p>${f.a}</p></details>`).join('\n        ')}
+      </div>
+    </section>
+  `;
+}
+
+function homeFooter(): string {
+  const year = new Date().getFullYear();
+  const filings = [
+    ICP_NUMBER
+      ? `<a href="https://beian.miit.gov.cn/" rel="noopener nofollow" target="_blank">${ICP_NUMBER}</a>`
+      : '',
+    POLICE_RECORD_NUMBER
+      ? `<a href="${POLICE_RECORD_URL}" rel="noopener nofollow" target="_blank">${POLICE_RECORD_NUMBER}</a>`
+      : ''
+  ]
+    .filter(Boolean)
+    .join('<span class="sw-dot" aria-hidden="true">·</span>');
+  return `
+    <footer class="sw-foot" id="about">
+      <div class="sw-foot-top">
+        <div class="sw-foot-brand">
+          <div class="sw-fb-mark">b64file</div>
+          <p class="sw-fb-tag">由爱而生 · 浏览器里的 Base64 工具箱。转换全部在本机完成，不做账号，也不存文件。</p>
+          <a class="sw-fb-mail" href="mailto:${FEEDBACK_EMAIL}">反馈 · ${FEEDBACK_EMAIL}</a>
+        </div>
+        <div class="sw-foot-cols">
+          <div class="sw-fc">
+            <h4>转换</h4>
+            <a href="/file-to-base64/">文件转 Base64</a>
+            <a href="/base64-to-file/">Base64 转文件</a>
+            <a href="/image-to-base64/">图片转 Base64</a>
+            <a href="/pdf-to-base64/">PDF 转 Base64</a>
+          </div>
+          <div class="sw-fc">
+            <h4>开发</h4>
+            <a href="/jwt-decode/">JWT 解码</a>
+            <a href="/data-url/">Data URL 转换</a>
+            <a href="/base64url/">Base64URL</a>
+            <a href="/base64-javascript/">JavaScript 用法</a>
+          </div>
+          <div class="sw-fc">
+            <h4>站点</h4>
+            <a href="/#tools">工具索引</a>
+            <a href="/about/">关于</a>
+            <a href="/privacy/">隐私政策</a>
+            <a href="/terms/">服务条款</a>
+          </div>
+        </div>
+      </div>
+      <div class="sw-foot-bot">
+        <span>© ${year} b64file.cn</span>
+        ${filings ? `<span class="sw-filings">${filings}</span>` : ''}
+        <span>Base64 只是编码，不是加密 · 全站转换在本机完成</span>
+      </div>
+      <div class="sw-footbar" aria-hidden="true"></div>
+    </footer>
+  `;
+}
+
 export function metaTags(page: PageId): string {
   const d = pageData[page] ?? pageData.home;
   const canonical = absoluteUrl(pagePaths[page] ?? '/');
@@ -1302,8 +1904,16 @@ export function metaTags(page: PageId): string {
  * zh/en alternates. hreflang 必须双向声明才有效：英文站已指向 b64file.cn，
  * 这里补上反向，否则 Google 无法确认两站是同一内容的两个语言版本。
  */
+/** 只有中文站存在的落地页，英文站没有对应页面，不声明 en / x-default。 */
+const NO_EN_COUNTERPART = new Set<PageId>([
+  'base64-to-word-garbled',
+  'jwt-expiry',
+  'data-url-too-long',
+  'wechat-miniprogram-base64'
+]);
+
 export function hreflangTags(page: PageId): string {
-  if (page === '404') return '';
+  if (page === '404' || NO_EN_COUNTERPART.has(page)) return '';
   const path = pagePaths[page] ?? '/';
   const zh = absoluteUrl(path);
   const enBase = EN_SITE_URL.replace(/\/$/, '');

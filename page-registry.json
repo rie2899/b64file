@@ -24,6 +24,14 @@
     "updated": "2026-10-08"
   },
   {
+    "id": "wechat-miniprogram-base64",
+    "path": "/wechat-miniprogram-base64/",
+    "html": "wechat-miniprogram-base64/index.html",
+    "input": "wxBase64",
+    "priority": "0.7",
+    "updated": "2026-10-30"
+  },
+  {
     "id": "base64-to-image",
     "path": "/base64-to-image/",
     "html": "base64-to-image/index.html",
@@ -190,6 +198,30 @@
     "input": "jsGuide",
     "priority": "0.7",
     "updated": "2026-10-20"
+  },
+  {
+    "id": "base64-to-word-garbled",
+    "path": "/base64-to-word-garbled/",
+    "html": "base64-to-word-garbled/index.html",
+    "input": "wordGarbled",
+    "priority": "0.7",
+    "updated": "2026-10-30"
+  },
+  {
+    "id": "jwt-expiry",
+    "path": "/jwt-expiry/",
+    "html": "jwt-expiry/index.html",
+    "input": "jwtExpiry",
+    "priority": "0.7",
+    "updated": "2026-10-30"
+  },
+  {
+    "id": "data-url-too-long",
+    "path": "/data-url-too-long/",
+    "html": "data-url-too-long/index.html",
+    "input": "dataUrlTooLong",
+    "priority": "0.7",
+    "updated": "2026-10-30"
   },
   {
     "id": "privacy",
