@@ -8,11 +8,12 @@ Base64 在线工具站，全静态、纯前端、浏览器内处理（文件不�
 
 - Vite + TypeScript，无框架；样式手写 CSS
 - 包管理 `pnpm`
-- 32 个页面由 `page-registry.json` 驱动，`src/static-pages.ts` 里 `renderShell()` 产出共享外壳
+- 页面数量以 `page-registry.json` 为准（当前 34 条＝对外 33 页 + 404），全部由它驱动，`src/static-pages.ts` 里 `renderShell()` 产出共享外壳
 
 ```bash
 pnpm build      # tsc && vite build → dist/
-pnpm test       # 91 个测试（Vitest），必须全绿才算完
+pnpm test       # 93 个测试（Vitest），必须全绿才算完
+bash scripts/deploy.sh  # 测试 → 构建 → 备份 → 上传 → 验线上（无人值守可直接跑）
 ```
 
 ## 目录约定
