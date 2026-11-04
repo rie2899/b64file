@@ -128,6 +128,19 @@ export function detectFileType(bytes: Uint8Array): DetectedFileType | null {
   if (startsWith(bytes, ascii('SQLite format 3')))
     return { mime: 'application/x-sqlite3', extension: 'db', label: 'SQLite 数据库', category: 'binary' };
 
+  // 字体：一律按签名认，不按扩展名猜 —— 一个 TTF 改名叫 .woff2 在部分浏览器能过、
+  // 在部分浏览器直接拒载，只有签名是事实。
+  if (startsWith(bytes, ascii('wOF2')))
+    return { mime: 'font/woff2', extension: 'woff2', label: 'WOFF2 字体', category: 'binary' };
+  if (startsWith(bytes, ascii('wOFF')))
+    return { mime: 'font/woff', extension: 'woff', label: 'WOFF 字体', category: 'binary' };
+  if (startsWith(bytes, ascii('OTTO')))
+    return { mime: 'font/otf', extension: 'otf', label: 'OpenType 字体（CFF 轮廓）', category: 'binary' };
+  if (startsWith(bytes, [0x00, 0x01, 0x00, 0x00]))
+    return { mime: 'font/ttf', extension: 'ttf', label: 'TrueType 字体', category: 'binary' };
+  if (startsWith(bytes, ascii('ttcf')))
+    return { mime: 'font/collection', extension: 'ttc', label: '字体集合（TTC）', category: 'binary' };
+
   if (startsWith(bytes, ascii('<svg')) || containsEarly(bytes, ascii('<svg')))
     return { mime: 'image/svg+xml', extension: 'svg', label: 'SVG 图片', category: 'image' };
 

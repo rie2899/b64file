@@ -14,6 +14,8 @@ https://b64file.cn/base64url/
 https://b64file.cn/base64-to-pptx/
 https://b64file.cn/base64-to-text/
 https://b64file.cn/base64-to-svg/
+https://b64file.cn/base64-to-webp/
+https://b64file.cn/base64-to-woff2/
 https://b64file.cn/base64-to-mp3/
 https://b64file.cn/base64-to-txt/
 https://b64file.cn/data-url/

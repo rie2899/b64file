@@ -97,6 +97,18 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://b64file.cn/base64-to-webp/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://b64file.cn/base64-to-woff2/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://b64file.cn/base64-to-mp3/</loc>
     <lastmod>2026-10-08</lastmod>
     <changefreq>weekly</changefreq>

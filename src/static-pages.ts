@@ -496,6 +496,74 @@ export const pageData: Record<PageId, PageContent> = {
       { q: '为什么我的 SVG 还原后是乱码？', a: 'SVG 本身是文本，通常不会乱。乱码多半是那段 Base64 被截断、或者复制时丢了字符 —— 工具的诊断栏会告诉你错在第几位。' }
     ]
   },
+  'base64-to-webp': {
+    title: 'Base64 转 WebP 在线工具 - 图片还原下载 - b64file',
+    desc: '粘贴 Base64 按 RIFF 容器里的 WEBP 标记认出格式，还原成 .webp 图片下载。Data URL 前缀、换行、缺失填充符自动处理，不按扩展名瞎猜。',
+    h1: 'Base64 转 WebP 在线工具',
+    answer:
+      '网页里 <code>&lt;img src="data:image/webp;base64,..."&gt;</code> 抄下来是一长串字符，不是能打开的文件。贴进来，工具看第 9–12 字节有没有 <code>WEBP</code> 标记，有就还你一个 .webp。',
+    mode: 'to-file',
+    quick: [
+      'WebP 不是独立签名：它躲在 RIFF 容器里，第 9–12 字节才是 WEBP',
+      '同一段 Base64 可能是 WAV 或 AVI —— 三者都以 RIFF 开头，只看开头四个字母会认错',
+      '还原是原样字节，不做二次压缩，也不会转成 JPG/PNG',
+      '老版本微信内置浏览器不认 WebP，要发给别人先还原成 PNG',
+      '打不开多半是那段 Base64 被截断，诊断栏会指出错在第几位'
+    ],
+    sections: [
+      {
+        h2: 'WebP 的签名藏在容器里',
+        html: '<p>文件头是 <code>RIFF</code> 四个字母，真正的格式写在偏移 8 开始的四字节里：WebP 是 <code>WEBP</code>，WAV 是 <code>WAVE</code>，AVI 是 <code>AVI␣</code>。所以判断格式不能只看前四字节 —— 一个只看开头的解析器会把音频认成图片，还给你一个打不开的 .webp。</p><p>这个工具把三者分开认，认错了会照实说，不会硬给一个扩展名。</p>'
+      },
+      {
+        h2: 'WebP 是怎么被塞进 Base64 的',
+        html: '<p>三种常见来路：网页把首屏图片内联成 Data URL 省一次请求；接口把缩略图当字段返回；截图或图片优化工具的导出结果本身就是 WebP。前端调试时从 DevTools 复制出来，拿到手的就是那串 Base64。</p><p>WebP 分有损和无损两种编码，还原出来是一样的原始字节 —— 工具不做转码，所以你拿到的一定是别人当初编进去的那份数据。</p>'
+      },
+      {
+        h2: '还原之后打不开，先看两个地方',
+        html: '<p>一、字节完整性：Base64 被截断、或者复制时丢了中间的字符，解出来就是坏文件。诊断栏会说清楚是长度不是 4 的倍数、还是体内出现了非法字符，以及错在第几位。</p><p>二、兼容性：老版本微信内置浏览器（X5 内核）和部分 Windows 看图软件不认 WebP。要贴进聊天窗口发人，先在本机转成 PNG 再传，别让对方收到一张白框。</p>'
+      }
+    ],
+    faqs: [
+      { q: '为什么还原出来不是 WebP，而是 PNG 或 JPEG？', a: '因为那段 Base64 里本来就是 PNG/JPEG。工具按真实签名报类型，不按你希望的格式给 —— 它不会帮你转码。' },
+      { q: '能顺便把 WebP 转成 JPG 吗？', a: '不能。这个站只做 Base64 ↔ 文件的双向还原，不做图片格式转换。需要转码请用专门的图片工具。' },
+      { q: '为什么同一段 Base64 有时被认成 WAV？', a: '正常。WAV、AVI、WebP 都以 RIFF 开头，区别只在偏移 8 之后的标记。如果那段数据其实是音频，工具就该报 WAV —— 是你贴错了，不是它认错了。' }
+    ]
+  },
+  'base64-to-woff2': {
+    title: 'Base64 转 WOFF2 字体工具 - 内联字体还原下载 - b64file',
+    desc: '粘贴 CSS 或接口里的字体 Base64，按 wOF2 / wOFF / OTTO / TTF 签名认出格式，还原成字体文件下载。适合拆内联 @font-face、找回图标字体。',
+    h1: 'Base64 转 WOFF2 在线工具',
+    answer:
+      '内联 <code>@font-face</code> 里的 <code>url(data:font/woff2;base64,...)</code> 拆出来是一串字符，贴进来就能还原成 .woff2 —— 认的是文件签名，不是别人写在 MIME 里的那行字。',
+    mode: 'to-file',
+    quick: [
+      'wOF2 = WOFF2，wOFF = WOFF1，OTTO = OpenType/CFF，00 01 00 00 = TrueType，ttcf = 字体集合',
+      'MIME 写 font/ttf 不代表真是 TTF —— 浏览器遇到对不上的签名会直接拒载',
+      '中文字体 woff2 动辄 3–8MB，Base64 后还要再涨 33%，塞进 CSS 基本不可行',
+      '还原是原始字节，不做子集化、不做格式转换',
+      '字体加载失败先看 MIME 和跨域头，不是先怀疑 Base64 写错了'
+    ],
+    sections: [
+      {
+        h2: '字体是最容易被 MIME 骗过去的格式',
+        html: '<p>WOFF2 以 <code>wOF2</code> 开头（Brotli 压缩的 sfnt），WOFF1 是 <code>wOFF</code>，OpenType/CFF 是 <code>OTTO</code>，原始 TrueType 是 <code>00 01 00 00</code>，字体集合是 <code>ttcf</code>。五个签名互不相同，但它们的 MIME 经常被人写错：一段 woff2 被标成 <code>font/ttf</code>，在 Chrome 里可能只是警告，在 Safari 或某些安卓 WebView 上直接不加载。</p><p>所以这里按签名认，MIME 只当参考。反过来也对：你把 TTF 改名成 .woff2 上传，浏览器校验签名后照样拒载。</p>'
+      },
+      {
+        h2: '内联字体是怎么来的',
+        html: '<p>常见三种：小图标字体为了省一次请求被内联进 CSS；单页应用把字体打进 JS 字符串；邮件模板和小程序为了不依赖外链，直接把字体转成 Base64 塞在样式里。这三种场景下你手上只有那串字符，没有原始文件 —— 想改字重、想换字库、想做子集化，都得先把文件拿回来。</p>'
+      },
+      {
+        h2: '中文字体为什么不该内联',
+        html: '<p>一个完整中文字库的 WOFF2 通常在 3–8MB，转成 Base64 体积再涨约三分之一。这串字符会随 CSS 一起阻塞首屏，代价远大于省下的那次请求。真正可行的做法是子集化：只保留页面用到的几百个字，压到几十 KB 再内联。</p><p>本工具不做子集化 —— 它只负责把字节还原成文件，压缩和裁剪要用专门的字形工具。</p>'
+      }
+    ],
+    faqs: [
+      { q: '还原出来的字体能直接装进系统吗？', a: 'WOFF/WOFF2 是网页传输格式，系统安装一般要 TTF 或 OTF。需要安装就先在本地用字体工具转一层，这里只还原字节，不做格式转换。' },
+      { q: 'Base64 前面那截 data:font/woff2;base64, 要手动删掉吗？', a: '不用。Data URL 前缀、换行、空格、缺失的填充符都会自动处理，整段贴进来就行。' },
+      { q: '为什么还原后字体在页面上还是不生效？', a: '大多数情况不是文件坏了。按顺序查：MIME 与实际签名是否一致、服务器有没有给字体目录设跨域头（字体默认受同源限制）、以及 @font-face 里的 font-family 有没有被后面的规则覆盖。' }
+    ]
+  },
   'base64-to-mp3': {
     title: 'Base64 转 MP3 在线工具 - 音频还原并下载 - b64file',
     desc: '粘贴 Base64 还原成 MP3 音频文件下载。按帧头识别格式而不是文件名，WAV、OGG、FLAC、M4A 也一并认；体积大的会先提醒你，别把标签页搞崩。',
@@ -1285,6 +1353,8 @@ const SHORT_LABEL: Record<string, string> = {
   base64url: 'Base64URL / JWT',
   'json-to-file': 'JSON 转文件',
   'base64-to-svg': 'Base64 转 SVG',
+  'base64-to-webp': 'Base64 转 WebP',
+  'base64-to-woff2': 'Base64 转 WOFF2',
   'base64-to-mp3': 'Base64 转 MP3',
   'base64-to-txt': 'Base64 转 TXT',
   'data-url': 'Data URL 工具',
@@ -1319,6 +1389,8 @@ const PAGE_GROUP: Record<string, PageGroup> = {
   'base64-to-pptx': 'decode',
   'json-to-file': 'decode',
   'base64-to-svg': 'decode',
+  'base64-to-webp': 'decode',
+  'base64-to-woff2': 'decode',
   'base64-to-mp3': 'decode',
   'base64-to-txt': 'decode',
   'data-url': 'decode',
@@ -1490,6 +1562,9 @@ export function metaTags(page: PageId): string {
  */
 /** 只有中文站存在的落地页，英文站没有对应页面，不声明 en / x-default。 */
 const NO_EN_COUNTERPART = new Set<PageId>([
+  // 英文站没有同路径页：
+  'base64-to-video',
+  'base64-to-zip',
   'base64-to-word-garbled',
   'jwt-expiry',
   'data-url-too-long',

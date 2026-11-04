@@ -199,6 +199,20 @@ describe('detectFileType', () => {
     expect(detectFileType(new Uint8Array([0x1f, 0x8b, 0x08, 0]))?.extension).toBe('gz');
   });
 
+  it('detects WOFF2 / WOFF / OTF / TTF / TTC by magic bytes', () => {
+    const asc = (t: string) => Array.from(t, (c) => c.charCodeAt(0));
+    expect(detectFileType(new Uint8Array([...asc('wOF2'), 0, 1, 0, 0]))?.extension).toBe('woff2');
+    expect(detectFileType(new Uint8Array([...asc('wOFF'), 0, 1, 0, 0]))?.extension).toBe('woff');
+    expect(detectFileType(new Uint8Array([...asc('OTTO'), 0, 0, 0, 9]))?.extension).toBe('otf');
+    expect(detectFileType(new Uint8Array([0x00, 0x01, 0x00, 0x00, 0x00, 0x0f]))?.extension).toBe('ttf');
+    expect(detectFileType(new Uint8Array([...asc('ttcf'), 0, 1, 0, 0]))?.extension).toBe('ttc');
+  });
+
+  it('TTF 签名不会被误认成 ICO（两者都以 00 开头）', () => {
+    expect(detectFileType(new Uint8Array([0x00, 0x00, 0x01, 0x00, 0x01, 0x00]))?.extension).toBe('ico');
+    expect(detectFileType(new Uint8Array([0x00, 0x01, 0x00, 0x00, 0x00, 0x10]))?.extension).toBe('ttf');
+  });
+
   it('detects WebP inside RIFF container', () => {
     const bytes = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50]);
     expect(detectFileType(bytes)?.extension).toBe('webp');

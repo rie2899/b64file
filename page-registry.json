@@ -128,6 +128,22 @@
     "updated": "2026-10-08"
   },
   {
+    "id": "base64-to-webp",
+    "path": "/base64-to-webp/",
+    "html": "base64-to-webp/index.html",
+    "input": "base64_to_webp",
+    "priority": "0.8",
+    "updated": "2026-11-05"
+  },
+  {
+    "id": "base64-to-woff2",
+    "path": "/base64-to-woff2/",
+    "html": "base64-to-woff2/index.html",
+    "input": "base64_to_woff2",
+    "priority": "0.8",
+    "updated": "2026-11-05"
+  },
+  {
     "id": "base64-to-mp3",
     "path": "/base64-to-mp3/",
     "html": "base64-to-mp3/index.html",
