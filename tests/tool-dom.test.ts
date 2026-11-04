@@ -37,6 +37,43 @@ describe('tool DOM interaction', () => {
     expect(nameInput?.value).toBe('b64file.png');
   });
 
+  it('WebP / WOFF2 落地页能把 Base64 还原成对应后缀的文件', async () => {
+    const asc = (t: string) => Array.from(t, (c) => c.charCodeAt(0));
+    const cases = [
+      {
+        page: 'base64-to-webp',
+        bytes: new Uint8Array([...asc('RIFF'), 0x1a, 0, 0, 0, ...asc('WEBP'), ...asc('VP8 '), 8, 0, 0, 0]),
+        label: 'WebP 图片',
+        ext: '.webp'
+      },
+      {
+        page: 'base64-to-woff2',
+        bytes: new Uint8Array([...asc('wOF2'), 0, 1, 0, 0, ...asc('test-font-payload')]),
+        label: 'WOFF2 字体',
+        ext: '.woff2'
+      }
+    ];
+
+    for (const c of cases) {
+      vi.resetModules();
+      document.body.dataset.page = c.page;
+      document.body.innerHTML = `<div id="app">${renderShell(c.page)}</div>`;
+      await import('../src/tool');
+
+      const input = document.querySelector<HTMLTextAreaElement>('#b64-input');
+      expect(input, `${c.page} 没有输入框`).toBeTruthy();
+      input!.value = encodeBytesToBase64(c.bytes);
+      input!.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 400));
+
+      const result = document.querySelector<HTMLElement>('#b64-result');
+      expect(result?.hidden, `${c.page} 没有出结果`).toBe(false);
+      expect(result?.textContent, `${c.page} 类型认错`).toContain(c.label);
+      const nameInput = result?.querySelector<HTMLInputElement>('#dl-name');
+      expect(nameInput?.value.endsWith(c.ext), `${c.page} 下载名 ${nameInput?.value}`).toBe(true);
+    }
+  });
+
   it('extracts files when a JSON API response is pasted', async () => {
     await import('../src/tool');
 

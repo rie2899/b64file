@@ -12,7 +12,7 @@ Base64 在线工具站，全静态、纯前端、浏览器内处理（文件不�
 
 ```bash
 pnpm build      # tsc && vite build → dist/
-pnpm test       # 93 个测试（Vitest），必须全绿才算完
+pnpm test       # 94 个测试（Vitest），必须全绿才算完
 bash scripts/deploy.sh  # 测试 → 构建 → 备份 → 上传 → 验线上（无人值守可直接跑）
 ```
 
