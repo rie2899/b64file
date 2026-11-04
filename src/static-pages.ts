@@ -208,7 +208,7 @@ export const pageData: Record<PageId, PageContent> = {
   },
   'pdf-to-base64': {
     title: 'PDF 转 Base64 在线工具 - b64file',
-    desc: '拖 PDF 进来，生成 Base64 字符串，接口传输、JSON 嵌入、系统对接都能直接用。',
+    desc: '拖 PDF 进来，生成 Base64 字符串，标准、URL-safe、带 data URL 前缀三种输出可选。接口传输、JSON 嵌入、系统对接都能直接用，文件不出浏览器。',
     h1: 'PDF 转 Base64 在线工具',
     answer:
       'PDF 拖进来，Base64 复制走，接口传参、JSON 报文、跨系统对接都用得上。提醒一句：编码后体积会涨约 33%，先确认对方接口的字段扛不扛得住。',
@@ -271,7 +271,7 @@ export const pageData: Record<PageId, PageContent> = {
   },
   'base64-to-word': {
     title: 'Base64 转 Word 在线工具 - docx 文档还原下载 - b64file',
-    desc: '粘贴 Base64 自动识别 docx 并还原为 Word 文档下载。接口返回的合同、报告、公文数据一键落地。',
+    desc: '粘贴 Base64 自动识别 docx 并还原为 Word 文档下载。靠文件头认类型，改扩展名也骗不过；接口返回的合同、报告、公文数据一键落地，数据断了会告诉你断在哪。',
     h1: 'Base64 转 Word 在线工具',
     answer:
       '接口吐出来一坨 Base64，要的是 Word 文档？贴进来。工具看文件头认出 docx（别拿 .zip 骗它，没用），还原下载。',
@@ -301,7 +301,7 @@ export const pageData: Record<PageId, PageContent> = {
   },
   'base64-to-excel': {
     title: 'Base64 转 Excel 在线工具 - xlsx 表格还原下载 - b64file',
-    desc: '粘贴 Base64 自动识别 xlsx 并还原为 Excel 表格下载。接口返回的对账单、报表数据一键落地。',
+    desc: '粘贴 Base64 自动识别 xlsx 并还原为 Excel 表格下载。按 OOXML 结构判断，.xlsm 宏文件也认；接口返回的对账单、报表数据一键落地，不用管扩展名。',
     h1: 'Base64 转 Excel 在线工具',
     answer:
       '接口返回的报表数据是一坨 Base64？贴进来，工具认出 xlsx 就地还原成 Excel 文件下载。不看扩展名看文件头，改成 .txt 也骗不过它。',
@@ -498,7 +498,7 @@ export const pageData: Record<PageId, PageContent> = {
   },
   'base64-to-mp3': {
     title: 'Base64 转 MP3 在线工具 - 音频还原并下载 - b64file',
-    desc: '粘贴 Base64 还原成 MP3 音频文件下载。按帧头识别格式，WAV、OGG、FLAC、M4A 也一并认。',
+    desc: '粘贴 Base64 还原成 MP3 音频文件下载。按帧头识别格式而不是文件名，WAV、OGG、FLAC、M4A 也一并认；体积大的会先提醒你，别把标签页搞崩。',
     h1: 'Base64 转 MP3 在线工具',
     answer:
       'TTS 接口、语音转写、离线音频资源，很多都返回 Base64 字符串。贴进来就能拿回一个能直接播放的音频文件。',
@@ -525,7 +525,7 @@ export const pageData: Record<PageId, PageContent> = {
   },
   'base64-to-txt': {
     title: 'Base64 转 TXT 在线工具 - 还原纯文本文件 - b64file',
-    desc: '粘贴 Base64 还原成 .txt 纯文本文件下载：日志、配置、脚本、导出数据都能还原，按 UTF-8 解码。',
+    desc: '粘贴 Base64 还原成 .txt 纯文本文件下载：日志、配置、脚本、导出数据都能还原。按 UTF-8 解码，中文不会乱码；和「Base64 转文本」的区别这里说清了。',
     h1: 'Base64 转 TXT 在线工具',
     answer:
       '日志、配置、SQL、脚本被 Base64 之后，贴进来就能还原成 .txt 下载。只是想看几眼内容的话，用 「Base64 转文本」 更快，不用落盘。',
@@ -777,8 +777,8 @@ Buffer.from(b64, 'base64url')               // 处理 -_ 与缺失的填充</pre
   },
 
   privacy: {
-    title: '隐私政策 - b64file',
-    desc: 'b64file 隐私政策：本站是纯静态页面，转换在浏览器里完成。这里说明我们处理与不处理哪些信息。',
+    title: '隐私政策 - b64file 不上传你的文件',
+    desc: 'b64file 隐私政策：本站是纯静态页面，所有转换在浏览器里完成，文件不上传服务器。这里说明我们收集什么、不收集什么，以及统计工具怎么用。',
     h1: '隐私政策',
     answer:
       '一句话概括：你在页面中输入或粘贴的内容，只在浏览器内存里处理，关闭页面即清除。下面把本站碰和不碰哪些信息说清楚。',
@@ -816,7 +816,7 @@ Buffer.from(b64, 'base64url')               // 处理 -_ 与缺失的填充</pre
   },
   about: {
     title: '关于 b64file - 由爱而生的本地文件工具',
-    desc: 'b64file 是一个独立开发的免费 Base64 工具：无广告、无账号。了解它为什么存在，以及背后的原则。',
+    desc: 'b64file 是一个独立开发的免费 Base64 工具：无广告、无账号、无使用次数限制。了解它为什么存在、为什么坚持在浏览器里处理，以及背后的几条原则。',
     h1: '关于 b64file',
     answer:
       'b64file 由爱而生——起因是一次真实的抓狂：接口返回的 JSON 里嵌着两份 PDF 的 Base64，试遍所有在线工具，得到的全是「非法字符」报错，没人告诉我贴的是 JSON，更没人帮我把文件捞出来。',
@@ -850,8 +850,8 @@ Buffer.from(b64, 'base64url')               // 处理 -_ 与缺失的填充</pre
     ]
   },
   terms: {
-    title: '服务条款 - b64file',
-    desc: 'b64file 服务条款：服务性质、使用边界、免责声明与使用规范。',
+    title: '服务条款 - b64file 免费工具的使用边界',
+    desc: 'b64file 服务条款：服务性质与免费范围、使用边界与禁止行为、免责声明、知识产权归属。使用本站即视为同意这些条款。',
     h1: '服务条款',
     answer:
       '继续使用 b64file，即视为你同意以下条款。本工具按「现状」免费提供，转换在浏览器中完成；结果由算法生成，重要文件请自行备份。',
@@ -1473,11 +1473,11 @@ export function metaTags(page: PageId): string {
   const d = pageData[page] ?? pageData.home;
   const canonical = absoluteUrl(pagePaths[page] ?? '/');
   const ogImage = absoluteUrl('/og-image.png');
-  return `<title>${d.title}</title>
-    <meta name="description" content="${d.desc}" />
+  return `<title>${escapeHtml(d.title)}</title>
+    <meta name="description" content="${escapeHtml(d.desc)}" />
     <meta name="applicable-device" content="pc,mobile" />
-    <meta property="og:title" content="${d.title}" />
-    <meta property="og:description" content="${d.desc}" />
+    <meta property="og:title" content="${escapeHtml(d.title)}" />
+    <meta property="og:description" content="${escapeHtml(d.desc)}" />
     <meta property="og:type" content="website" />
     ${canonical ? `<meta property="og:url" content="${canonical}" />` : ''}
     ${ogImage ? `<meta property="og:image" content="${ogImage}" />` : ''}
