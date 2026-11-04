@@ -12,7 +12,33 @@ writeFileSync(
   'public/robots.txt',
   // baidu-urls.txt 是给百度主动推送 API 读的清单，不是内容页 —— 让引擎别把它当薄内容收进去。
   // （llms.txt 保持可抓，那是给 AI 检索用的入口。）
-  `User-agent: *\nAllow: /\nDisallow: /baidu-urls.txt\n\nSitemap: ${siteUrl}/sitemap.xml\n`
+  // AI 搜索爬虫单独声明：`User-agent: *` 虽然已允许，但显式列出来是明确的抓取授权信号，
+  // 也避免以后某条通配规则误伤（GEO：ChatGPT 搜索走 OAI-SearchBot，用户让它开网页走 ChatGPT-User）。
+  `User-agent: *
+Allow: /
+Disallow: /baidu-urls.txt
+
+# --- AI 搜索与生成式引擎爬虫：显式放行 ---
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: ${siteUrl}/sitemap.xml
+`
 );
 
 writeFileSync(

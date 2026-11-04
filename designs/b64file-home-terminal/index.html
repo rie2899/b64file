@@ -1,0 +1,1598 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230A0A0A'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%233BFF7A'/%3E%3C/svg%3E">
+<title>b64file 首页重设计 · 终端粗野主义 · 桌面 1440 / 移动 390</title>
+<style>
+/* ==========================================================================
+   b64file — 首页重设计 方向 B：终端 / 粗野主义
+   近黑底 · 单一磷光绿 · 2px 实线 · 全等宽 UI
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --bg:      #0A0A0A;
+  --panel:   #0E0E0E;
+  --panel2:  #131313;
+  --line:    #242424;
+  --line2:   #3A3A3A;
+  --fg:      #EDEDED;
+  --fg2:     #B4B4B4;
+  --fg3:     #8E8E8E;
+  --fg4:     #868686;
+  --acc:     #3BFF7A;
+  --acc-ink: #04170A;
+  --acc-wash: rgba(59,255,122,.07);
+  --inv-bg:  #EDEDED;
+  --inv-fg:  #0A0A0A;
+  --inv-dim: #4A4A4A;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono",
+          "PingFang SC", "Microsoft YaHei", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei",
+          "Noto Sans SC", "Hiragino Sans GB", sans-serif;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  background-image: radial-gradient(#171717 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-position: 0 0;
+}
+
+::selection { background: var(--acc); color: var(--acc-ink); }
+
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+/* ---------------------------------------------------------------- 画布层 */
+
+.canvas { padding: 30px 46px 120px; }
+
+.canvas-head {
+  max-width: 1920px;
+  margin: 0 auto 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 28px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: #8E8E8E;
+}
+
+.ch-left { display: flex; align-items: center; gap: 12px; }
+.ch-mark {
+  width: 10px; height: 10px; background: var(--acc);
+  box-shadow: 0 0 12px rgba(59,255,122,.5);
+}
+.ch-title { color: #EDEDED; font-weight: 700; letter-spacing: .06em; }
+.ch-slash { color: #4A4A4A; }
+.ch-sub { color: #9A9A9A; }
+
+.ch-right { display: flex; align-items: center; gap: 8px; }
+
+.zoom-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  padding: 6px 11px;
+  border: 1px solid #2E2E2E;
+  color: #9A9A9A;
+  background: #0C0C0C;
+  transition: color .12s, border-color .12s, background .12s;
+}
+.zoom-btn:hover { color: #EDEDED; border-color: #4A4A4A; }
+.zoom-btn.on { color: var(--acc-ink); background: var(--acc); border-color: var(--acc); }
+
+.boards {
+  display: flex;
+  align-items: flex-start;
+  gap: 54px;
+  max-width: 1920px;
+  margin: 0 auto;
+  transform-origin: 0 0;
+}
+
+.board-wrap { flex: none; }
+
+.board-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #8E8E8E;
+}
+.board-label .tick { width: 7px; height: 7px; background: var(--acc); }
+.board-label b { color: #EDEDED; font-weight: 700; letter-spacing: .12em; }
+.board-label .dim { color: #757575; }
+
+/* ---------------------------------------------------------------- 画板 */
+
+.board {
+  position: relative;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  overflow: hidden;
+  border: 2px solid #2E2E2E;
+}
+.board--desktop { width: 1440px; }
+.board--mobile  { width: 390px; }
+
+.board[data-theme="light"] {
+  --bg:      #F4F3EF;
+  --panel:   #EAE9E3;
+  --panel2:  #E3E2DB;
+  --line:    #CFCDC4;
+  --line2:   #A5A298;
+  --fg:      #141412;
+  --fg2:     #3A3833;
+  --fg3:     #55524B;
+  --fg4:     #63605A;
+  --acc:     #06702E;
+  --acc-ink: #FFFFFF;
+  --acc-wash: rgba(6,112,46,.06);
+  --inv-bg:  #141412;
+  --inv-fg:  #F4F3EF;
+  --inv-dim: #B0ADA4;
+}
+.board[data-theme="light"] .ch-mark,
+.board[data-theme="light"] .ghost { box-shadow: none; }
+
+/* 顶栏状态条 ------------------------------------------------------------ */
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 34px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--fg3);
+}
+.sb-l, .sb-r { display: flex; align-items: center; gap: 10px; }
+.live { display: flex; align-items: center; gap: 7px; color: var(--acc); }
+.live i {
+  width: 6px; height: 6px; background: var(--acc); display: block;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
+.sb-sep { color: var(--line2); }
+
+/* 导航 ---------------------------------------------------------------- */
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  height: 78px;
+  padding: 0 64px;
+  border-bottom: 2px solid var(--line2);
+  background: var(--bg);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--mono);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--fg);
+}
+.brand .d { color: var(--acc); }
+.brand-tag {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: .1em;
+  color: var(--fg3);
+  padding: 4px 9px;
+  border: 1px solid var(--line2);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: .1em;
+  color: var(--fg2);
+}
+.nav-links a {
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+  transition: color .12s, border-color .12s;
+}
+.nav-links a:hover { color: var(--acc); border-bottom-color: var(--acc); }
+.nav-links a::before { content: "./"; color: var(--fg4); margin-right: 1px; }
+
+.nav-end { display: flex; align-items: center; gap: 10px; }
+
+.icon-btn {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border: 2px solid var(--line2);
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: 14px;
+  transition: color .12s, border-color .12s, background .12s;
+}
+.icon-btn:hover { color: var(--acc-ink); background: var(--acc); border-color: var(--acc); }
+
+.gh {
+  display: flex; align-items: center; gap: 7px;
+  height: 38px; padding: 0 14px;
+  border: 2px solid var(--line2);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .08em;
+  color: var(--fg2);
+  transition: color .12s, border-color .12s, background .12s;
+}
+.gh:hover { color: var(--acc); border-color: var(--acc); }
+.gh .up { color: var(--acc); }
+
+/* Hero ---------------------------------------------------------------- */
+
+.hero { padding: 62px 64px 58px; }
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 24px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: .04em;
+  color: var(--fg2);
+  margin-bottom: 34px;
+}
+.eyebrow-l { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.eyebrow-r {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--fg4);
+}
+.prompt { display: inline-flex; align-items: center; gap: 8px; }
+.prompt .sigil { color: var(--acc); }
+.cursor {
+  display: inline-block;
+  width: 9px; height: 15px;
+  margin-left: 3px;
+  background: var(--acc);
+  transform: translateY(2px);
+  animation: blink 1.15s steps(1, end) infinite;
+}
+@keyframes blink { 0%, 55% { opacity: 1 } 56%, 100% { opacity: 0 } }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid var(--line2);
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--fg2);
+}
+.tag i { width: 6px; height: 6px; background: var(--acc); display: block; }
+
+.h1 {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 72px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -.025em;
+  color: var(--fg);
+  white-space: nowrap;
+}
+.h1 .m {
+  font-family: var(--mono);
+  font-style: normal;
+  font-weight: 700;
+  color: var(--acc);
+  letter-spacing: -.03em;
+}
+.only-m { display: none; }
+
+.hero-sub {
+  margin: 32px 0 0;
+  max-width: 700px;
+  font-family: var(--sans);
+  font-size: 18.5px;
+  line-height: 1.75;
+  color: var(--fg2);
+  letter-spacing: .01em;
+}
+.hero-sub b { color: var(--fg); font-weight: 600; }
+.nb { white-space: nowrap; }
+
+.hero-note {
+  margin: 18px 0 0;
+  max-width: 860px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.95;
+  color: var(--fg2);
+  padding-left: 14px;
+  border-left: 2px solid var(--line2);
+}
+.hero-note .cm { color: var(--acc); }
+.hero-note b { color: var(--fg2); font-weight: 400; }
+
+/* 上传终端窗口 --------------------------------------------------------- */
+
+.term {
+  margin-top: 46px;
+  border: 2px solid var(--line2);
+  background: var(--panel);
+}
+
+.term-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--panel2);
+  border-bottom: 2px solid var(--line2);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: var(--fg3);
+}
+.dots { display: flex; align-items: center; gap: 5px; }
+.dots span { width: 7px; height: 7px; background: var(--line2); display: block; }
+.dots span:last-child { background: var(--acc); }
+.term-path { color: var(--fg2); }
+.term-path .tilde { color: var(--acc); }
+.term-bar-r { margin-left: auto; color: var(--fg4); letter-spacing: .1em; }
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+}
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  height: 46px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .06em;
+  color: var(--fg3);
+  border-right: 1px solid var(--line);
+  transition: color .12s, background .12s, box-shadow .12s;
+}
+.tab .n { color: var(--fg4); font-size: 10.5px; }
+.tab:hover { color: var(--fg); background: var(--panel2); }
+.tab.on {
+  color: var(--acc);
+  background: var(--bg);
+  box-shadow: inset 0 -2px 0 var(--acc);
+}
+.tab.on .n { color: var(--acc); opacity: .6; }
+
+.term-body { padding: 20px; }
+
+.drop {
+  padding: 28px 28px 20px;
+  border: 2px dashed var(--line2);
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.012) 0 2px, transparent 2px 8px);
+  transition: border-color .16s, background-color .16s;
+}
+.drop:hover, .drop.hot { border-color: var(--acc); background-color: var(--acc-wash); }
+.drop.hot .drop-icon { color: var(--acc); }
+
+.drop-main { display: flex; align-items: center; gap: 22px; }
+.drop-icon { color: var(--fg3); flex: none; transition: color .16s; }
+.drop-icon svg { display: block; }
+.drop-text { flex: 1; min-width: 0; }
+
+.drop-title {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  color: var(--fg);
+}
+.drop-sub {
+  margin: 7px 0 0;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: .02em;
+  color: var(--fg3);
+}
+
+.btn-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 24px;
+  padding: 13px 30px;
+  background: var(--acc);
+  color: var(--acc-ink);
+  border: 2px solid var(--acc);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  transition: background .12s, color .12s;
+}
+.btn-solid:hover { background: var(--bg); color: var(--acc); }
+.drop-main .btn-solid { margin-top: 0; flex: none; }
+.btn-solid .kbd {
+  font-size: 10px;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  opacity: .7;
+  letter-spacing: 0;
+}
+
+.formats {
+  margin: 22px 0 0;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line2);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  color: var(--fg4);
+  text-transform: uppercase;
+}
+
+.paste { display: none; }
+.paste.on { display: block; }
+.drop-wrap.off { display: none; }
+
+.paste-area {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  padding: 16px;
+  background: var(--bg);
+  border: 2px solid var(--line2);
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.8;
+  letter-spacing: .01em;
+}
+.paste-area:focus { outline: none; border-color: var(--acc); }
+.paste-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--fg4);
+  letter-spacing: .08em;
+}
+
+.term-foot { border-top: 1px solid var(--line); }
+.term-foot div {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 20px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .02em;
+  color: var(--fg2);
+}
+.term-foot div + div { border-top: 1px solid var(--line); }
+.term-foot span {
+  flex: none;
+  width: 84px;
+  color: var(--fg4);
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.term-foot b { font-weight: 400; color: var(--fg2); }
+.term-foot .hl { color: var(--acc); }
+
+/* 区块 ---------------------------------------------------------------- */
+
+.sec { padding: 54px 64px 0; }
+.sec-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+  font-family: var(--mono);
+}
+.sec-no { font-size: 12px; letter-spacing: .08em; color: var(--acc); }
+.sec-title { font-size: 14px; font-weight: 700; letter-spacing: .16em; color: var(--fg); }
+.sec-en { font-size: 10.5px; letter-spacing: .16em; color: var(--fg4); text-transform: uppercase; }
+.sec-rule { flex: 1; height: 2px; background: var(--line); }
+.sec-meta { font-size: 10.5px; letter-spacing: .1em; color: var(--fg3); text-transform: uppercase; }
+
+/* 工具表 -------------------------------------------------------------- */
+
+.tbl {
+  border: 2px solid var(--line2);
+  border-top-width: 2px;
+  background: var(--bg);
+}
+
+.tbl-head {
+  display: grid;
+  grid-template-columns: 56px 196px 244px minmax(0,1fr) 84px;
+  gap: 18px;
+  align-items: center;
+  padding: 9px 18px;
+  background: var(--panel2);
+  border-bottom: 2px solid var(--line2);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--fg4);
+}
+
+.tbl-row {
+  display: grid;
+  grid-template-columns: 56px 196px 244px minmax(0,1fr) 84px;
+  gap: 18px;
+  align-items: center;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  transition: background .1s, color .1s;
+}
+.tbl-row:last-child { border-bottom: 0; }
+.tbl-row:hover { background: var(--inv-bg); color: var(--inv-fg); }
+
+.tbl-row .no {
+  font-size: 12px;
+  letter-spacing: .06em;
+  color: var(--acc);
+  font-variant-numeric: tabular-nums;
+}
+.tbl-row .name {
+  font-family: var(--sans);
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  color: var(--fg);
+}
+.tbl-row .path {
+  font-size: 11.5px;
+  letter-spacing: .01em;
+  color: var(--fg3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tbl-row .desc {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--fg2);
+  letter-spacing: .005em;
+}
+.tbl-row .go {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  font-size: 11.5px;
+  letter-spacing: .06em;
+  color: var(--fg3);
+  white-space: nowrap;
+}
+.tbl-row .go i { font-style: normal; color: var(--acc); transition: color .1s, transform .12s; }
+
+.tbl-row:hover .name,
+.tbl-row:hover .desc,
+.tbl-row:hover .no,
+.tbl-row:hover .path,
+.tbl-row:hover .go { color: var(--inv-fg); }
+.tbl-row:hover .path,
+.tbl-row:hover .desc { color: var(--inv-dim); }
+.tbl-row:hover .go i { color: var(--inv-fg); transform: translateX(3px); }
+
+/* 其余 15 个 ----------------------------------------------------------- */
+
+.rest {
+  margin-top: 26px;
+  border: 2px solid var(--line);
+}
+.rest-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  color: var(--fg3);
+}
+.rest-head b { color: var(--fg); font-weight: 700; }
+.rest-head .n { color: var(--acc); }
+.rest-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background: var(--line);
+}
+.rest-grid a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 14px;
+  background: var(--bg);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .01em;
+  color: var(--fg2);
+  transition: background .1s, color .1s;
+}
+.rest-grid a::before { content: "—"; color: var(--fg4); }
+.rest-grid a:hover { background: var(--inv-bg); color: var(--inv-fg); }
+.rest-grid a:hover::before { color: var(--inv-dim); }
+
+/* 为什么用它 ---------------------------------------------------------- */
+
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border: 2px solid var(--line2);
+  margin-top: 4px;
+}
+.why {
+  padding: 30px 28px 34px;
+  border-right: 2px solid var(--line2);
+  background: var(--bg);
+}
+.why:last-child { border-right: 0; }
+.why-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--fg4);
+  margin-bottom: 20px;
+}
+.why-top .n { font-size: 22px; color: var(--acc); letter-spacing: 0; font-weight: 700; }
+.why h3 {
+  margin: 0 0 12px;
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  color: var(--fg);
+}
+.why p {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  line-height: 1.85;
+  color: var(--fg2);
+}
+
+/* 页脚 ---------------------------------------------------------------- */
+
+.foot {
+  margin-top: 62px;
+  border-top: 2px solid var(--line2);
+  padding: 44px 64px 0;
+}
+.foot-top {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr 1fr 1fr;
+  gap: 0;
+  padding-bottom: 34px;
+}
+.foot-brand { padding-right: 56px; }
+.foot-brand .b {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--fg);
+}
+.foot-brand .b em { font-style: normal; color: var(--acc); }
+.foot-brand p {
+  margin: 14px 0 0;
+  max-width: 330px;
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.85;
+  color: var(--fg3);
+}
+.foot-brand .mail {
+  display: inline-block;
+  margin-top: 16px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .02em;
+  color: var(--fg2);
+  border-bottom: 1px solid var(--line2);
+  padding-bottom: 3px;
+}
+.foot-brand .mail:hover { color: var(--acc); border-color: var(--acc); }
+
+.foot-col { padding-left: 26px; border-left: 1px solid var(--line); }
+
+.foot-col h4 {
+  margin: 0 0 14px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--fg4);
+}
+.foot-col a {
+  display: block;
+  padding: 5px 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .01em;
+  color: var(--fg2);
+  transition: color .12s, padding-left .12s;
+}
+.foot-col a:hover { color: var(--acc); padding-left: 4px; }
+
+.foot-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 26px;
+  flex-wrap: wrap;
+  padding: 16px 0 18px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  color: var(--fg4);
+  text-transform: uppercase;
+}
+.foot-bottom .dot { color: var(--acc); }
+
+/* ==========================================================================
+   移动画板 390
+   ========================================================================== */
+
+.board--mobile .statusbar { padding: 0 16px; height: 30px; font-size: 9.5px; letter-spacing: .08em; }
+.board--mobile .sb-r .hide-m { display: none; }
+
+.board--mobile .nav {
+  height: 60px;
+  padding: 0 18px;
+  gap: 12px;
+}
+.board--mobile .brand { font-size: 18px; gap: 9px; }
+.board--mobile .brand-tag { display: none; }
+.board--mobile .nav-links { display: none; }
+.board--mobile .nav-end { gap: 8px; }
+.board--mobile .icon-btn { width: 34px; height: 34px; font-size: 13px; }
+.board--mobile .gh { height: 34px; padding: 0 10px; font-size: 10.5px; }
+.board--mobile .gh span.txt { display: none; }
+
+.board--mobile .hero { padding: 30px 20px 32px; }
+.board--mobile .eyebrow {
+  margin-bottom: 22px;
+  font-size: 11px;
+  gap: 10px;
+  justify-content: flex-start;
+}
+.board--mobile .cursor { width: 7px; height: 12px; margin-left: 1px; }
+.board--mobile .tag { font-size: 9.5px; letter-spacing: .08em; padding: 4px 8px; }
+
+.board--mobile .h1 {
+  font-size: 35px;
+  line-height: 1.22;
+  letter-spacing: -.02em;
+  white-space: normal;
+}
+.board--mobile .only-m { display: inline; }
+
+.board--mobile .hero-sub {
+  margin-top: 22px;
+  font-size: 15px;
+  line-height: 1.8;
+  max-width: none;
+}
+.board--mobile .hero-note {
+  margin-top: 14px;
+  font-size: 11.5px;
+  line-height: 1.9;
+  padding-left: 11px;
+}
+
+.board--mobile .term { margin-top: 28px; }
+.board--mobile .term-bar { height: 32px; font-size: 10px; padding: 0 10px; gap: 8px; }
+.board--mobile .term-bar-r { display: none; }
+.board--mobile .term-body { padding: 12px; }
+.board--mobile .tabs { display: flex; }
+.board--mobile .tab {
+  flex: 1;
+  justify-content: center;
+  padding: 0 8px;
+  height: 42px;
+  font-size: 11.5px;
+  border-right: 1px solid var(--line);
+}
+.board--mobile .tab:last-child { border-right: 0; }
+
+.board--mobile .drop { padding: 20px 16px 16px; }
+.board--mobile .drop-main { display: block; }
+.board--mobile .drop-icon { margin-bottom: 12px; }
+.board--mobile .drop-title { font-size: 18px; }
+.board--mobile .drop-sub { font-size: 11.5px; line-height: 1.7; }
+.board--mobile .btn-solid { width: 100%; padding: 14px 10px; font-size: 12.5px; margin-top: 0; }
+.board--mobile .drop-main .btn-solid { margin-top: 18px; }
+.board--mobile .formats { margin-top: 16px; padding-top: 12px; font-size: 9.5px; letter-spacing: .09em; line-height: 1.9; }
+
+.board--mobile .term-foot div {
+  padding: 10px 12px;
+  gap: 10px;
+  font-size: 10.5px;
+  flex-wrap: wrap;
+}
+.board--mobile .term-foot span { width: 100%; font-size: 9.5px; letter-spacing: .1em; }
+.board--mobile .term-foot b { font-size: 11px; line-height: 1.6; }
+
+.board--mobile .sec { padding: 34px 20px 0; }
+.board--mobile .sec-head { margin-bottom: 16px; gap: 8px; flex-wrap: wrap; }
+.board--mobile .sec-title { font-size: 12px; letter-spacing: .1em; }
+.board--mobile .sec-en { display: none; }
+.board--mobile .sec-rule { min-width: 24px; }
+.board--mobile .sec-meta { font-size: 9.5px; letter-spacing: .06em; width: 100%; }
+
+.board--mobile .tbl-head { display: none; }
+.board--mobile .tbl { border-width: 2px; }
+.board--mobile .tbl-row {
+  grid-template-columns: 32px minmax(0,1fr) auto;
+  grid-template-areas:
+    "no name go"
+    "no path path"
+    "no desc desc";
+  gap: 3px 10px;
+  padding: 16px 14px;
+  align-items: start;
+  border-bottom: 1px solid var(--line);
+}
+.board--mobile .tbl-row .no { grid-area: no; font-size: 11px; padding-top: 3px; }
+.board--mobile .tbl-row .name { grid-area: name; font-size: 15px; line-height: 1.5; }
+.board--mobile .tbl-row .go { grid-area: go; padding-top: 3px; font-size: 10.5px; }
+.board--mobile .tbl-row .path {
+  grid-area: path;
+  margin-top: 2px;
+  font-size: 10.5px;
+  white-space: normal;
+  word-break: break-all;
+}
+.board--mobile .tbl-row .desc {
+  grid-area: desc;
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.board--mobile .rest { margin-top: 18px; }
+.board--mobile .rest-head { padding: 10px 12px; font-size: 10px; }
+.board--mobile .rest-grid { grid-template-columns: repeat(2, 1fr); }
+.board--mobile .rest-grid a { padding: 11px 12px; font-size: 11px; gap: 6px; }
+
+.board--mobile .why-grid { grid-template-columns: 1fr; margin-top: 0; }
+.board--mobile .why {
+  border-right: 0;
+  border-bottom: 2px solid var(--line2);
+  padding: 22px 18px 24px;
+}
+.board--mobile .why:last-child { border-bottom: 0; }
+.board--mobile .why-top { margin-bottom: 12px; }
+.board--mobile .why-top .n { font-size: 18px; }
+.board--mobile .why h3 { font-size: 16px; margin-bottom: 9px; }
+.board--mobile .why p { font-size: 12.5px; line-height: 1.8; }
+
+.board--mobile .foot { margin-top: 36px; padding: 28px 20px 0; }
+.board--mobile .foot-top {
+  grid-template-columns: 1fr 1fr;
+  gap: 26px 20px;
+  padding-bottom: 26px;
+}
+.board--mobile .foot-brand { grid-column: 1 / -1; padding-right: 0; }
+.board--mobile .foot-col { padding-left: 0; border-left: 0; }
+.board--mobile .foot-brand .b { font-size: 19px; }
+.board--mobile .foot-brand p { font-size: 12px; max-width: none; }
+.board--mobile .foot-col h4 { font-size: 9.5px; margin-bottom: 10px; }
+.board--mobile .foot-col a { font-size: 11px; padding: 4px 0; }
+.board--mobile .foot-bottom {
+  font-size: 9px;
+  letter-spacing: .06em;
+  line-height: 1.9;
+  padding: 14px 0 16px;
+  gap: 6px 14px;
+  display: block;
+}
+.board--mobile .foot-bottom span { display: block; padding: 2px 0; }
+</style>
+</head>
+<body>
+
+<main class="canvas">
+
+  <div class="canvas-head">
+    <div class="ch-left">
+      <span class="ch-mark"></span>
+      <span class="ch-title">b64file 首页重设计</span>
+      <span class="ch-slash">/</span>
+      <span class="ch-sub">方向 B — 终端 · 粗野主义 · 近黑底 + 磷光绿</span>
+    </div>
+    <div class="ch-right">
+      <button class="zoom-btn" data-zoom="fit" type="button">[ FIT ]</button>
+      <button class="zoom-btn" data-zoom="100" type="button">[ 100% ]</button>
+    </div>
+  </div>
+
+  <div class="boards" id="boards">
+
+    <!-- ==================== 桌面 1440 ==================== -->
+    <div class="board-wrap">
+      <div class="board-label">
+        <span class="tick"></span>
+        <b>桌面</b>
+        <span class="dim">1440 × <span data-h="board-desktop">—</span></span>
+        <span class="dim">/ 首页</span>
+      </div>
+
+      <div class="board board--desktop" id="board-desktop" data-theme="dark">
+
+        <div class="statusbar">
+          <div class="sb-l">
+            <span class="live"><i></i>local only</span>
+            <span class="sb-sep">|</span>
+            <span>b64file.cn</span>
+            <span class="sb-sep">|</span>
+            <span>no upload · no account</span>
+          </div>
+          <div class="sb-r">
+            <span>23 tools</span>
+            <span class="sb-sep">|</span>
+            <span>v2.0</span>
+          </div>
+        </div>
+
+        <header class="nav">
+          <a class="brand" href="/">b<span class="d">64</span>file<span class="brand-tag">浏览器内转换</span></a>
+
+          <nav class="nav-links" aria-label="主导航">
+            <a href="#tools">工具</a>
+            <a href="/base64-javascript/">用法</a>
+            <a href="/about/">关于</a>
+          </nav>
+
+          <div class="nav-end">
+            <button class="icon-btn" type="button" data-theme-toggle title="切换明暗主题" aria-label="切换明暗主题">◐</button>
+            <a class="gh" href="https://github.com/" rel="noopener">github <span class="up">↗</span></a>
+          </div>
+        </header>
+
+        <section class="hero">
+          <div class="eyebrow">
+            <div class="eyebrow-l">
+              <span class="prompt"><span class="sigil">$</span> b64file --convert --local<span class="cursor"></span></span>
+              <span class="tag"><i></i>本地处理 · 不上传文件</span>
+            </div>
+            <span class="eyebrow-r">23 tools · 0 uploads</span>
+          </div>
+
+          <h1 class="h1">文件转 <em class="m">Base64</em>，<br class="only-m"><em class="m">Base64</em> 转回文件。</h1>
+
+          <p class="hero-sub">23 个工具，覆盖图片、PDF、Word、Excel、音视频和 JWT。<b>文件不上传</b>：<span class="nb">转换在你的浏览器里跑</span>，<span class="nb">也不用注册</span>。</p>
+
+          <p class="hero-note"><span class="cm">//</span> Base64 把每 3 个字节编成 4 个 ASCII 字符，体积增加约 <b>33%</b>；剩下要选的只有换行方式，和要不要 URL-safe。</p>
+
+          <div class="term">
+            <div class="term-bar">
+              <span class="dots"><span></span><span></span><span></span></span>
+              <span class="term-path"><span class="tilde">~/</span>b64file/upload</span>
+              <span class="term-bar-r">本地读取 · FileReader</span>
+            </div>
+
+            <div class="tabs" role="tablist">
+              <button class="tab on" type="button" role="tab" data-tab="drop"><span class="n">01</span>上传文件</button>
+              <button class="tab" type="button" role="tab" data-tab="paste"><span class="n">02</span>粘贴 Base64</button>
+            </div>
+
+            <div class="term-body">
+              <div class="drop-wrap" data-panel="drop">
+                <div class="drop" data-drop>
+                  <div class="drop-main">
+                    <div class="drop-icon">
+                      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M15 21V4"/><path d="M8 11l7-7 7 7"/><path d="M3 23v4h24v-4"/>
+                      </svg>
+                    </div>
+                    <div class="drop-text">
+                      <p class="drop-title">把文件拖到这里</p>
+                      <p class="drop-sub">或者直接选，支持一次选多个</p>
+                    </div>
+                    <button class="btn-solid" type="button">选择文件 <span class="kbd">⌘O</span></button>
+                  </div>
+                  <p class="formats">PNG · JPG · GIF · WEBP · SVG · PDF · DOCX · XLSX · PPTX · ZIP · MP3 · MP4</p>
+                </div>
+              </div>
+
+              <div class="paste" data-panel="paste">
+                <textarea class="paste-area" spellcheck="false" aria-label="粘贴 Base64 字符串">data:text/plain;base64,SGVsbG8sIGI2NGZpbGUu</textarea>
+                <div class="paste-row">
+                  <span>自动识别 MIME 与编码</span>
+                  <button class="btn-solid" type="button" style="margin-top:0">还原文件</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="term-foot">
+              <div><span>读取方式</span><b>FileReader · 分片</b></div>
+              <div><span>输出</span><b>Base64 / Base64URL / Data URL</b></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec" id="tools">
+          <div class="sec-head">
+            <span class="sec-no">[01]</span>
+            <span class="sec-title">工具索引</span>
+            <span class="sec-en">/ index</span>
+            <span class="sec-rule"></span>
+            <span class="sec-meta">23 个工具 · 8 主 / 15 其余</span>
+          </div>
+
+          <div class="tbl" role="table" aria-label="主要工具">
+            <div class="tbl-head" role="row">
+              <span>no.</span><span>工具</span><span>路径</span><span>说明</span><span>操作</span>
+            </div>
+
+            <a class="tbl-row" href="/file-to-base64" role="row">
+              <span class="no">01</span>
+              <span class="name">文件转 Base64</span>
+              <span class="path">/file-to-base64</span>
+              <span class="desc">任意文件读成 Base64 文本，可切换换行、URL-safe，或直接输出 Data URL。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+
+            <a class="tbl-row" href="/base64-to-file" role="row">
+              <span class="no">02</span>
+              <span class="name">Base64 转文件</span>
+              <span class="path">/base64-to-file</span>
+              <span class="desc">粘贴字符串，还原成原始文件并下载。自动识别类型，文件名可以改。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+
+            <a class="tbl-row" href="/image-to-base64" role="row">
+              <span class="no">03</span>
+              <span class="name">图片转 Base64</span>
+              <span class="path">/image-to-base64</span>
+              <span class="desc">PNG、JPG、SVG、WebP 转成 data URL，直接贴进 CSS 的 background。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+
+            <a class="tbl-row" href="/base64-to-image" role="row">
+              <span class="no">04</span>
+              <span class="name">Base64 转图片</span>
+              <span class="path">/base64-to-image</span>
+              <span class="desc">先在页面上预览，确认没花再另存为 PNG 或 JPG，不用先落盘。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+
+            <a class="tbl-row" href="/pdf-to-base64" role="row">
+              <span class="no">05</span>
+              <span class="name">PDF 转 Base64</span>
+              <span class="path">/pdf-to-base64</span>
+              <span class="desc">把 PDF 编码进邮件、iframe 或者接口请求体，附带 MIME 前缀。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+
+            <a class="tbl-row" href="/jwt-decode" role="row">
+              <span class="no">06</span>
+              <span class="name">JWT 解码</span>
+              <span class="path">/jwt-decode</span>
+              <span class="desc">拆开 header 与 payload，格式化 JSON，并标出 exp 还有多久到期。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+
+            <a class="tbl-row" href="/data-url" role="row">
+              <span class="no">07</span>
+              <span class="name">Data URL 转换</span>
+              <span class="path">/data-url</span>
+              <span class="desc">在 data: 前缀和纯 Base64 之间互相剥离、拼回，不丢 MIME。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+
+            <a class="tbl-row" href="/base64-size-calculator" role="row">
+              <span class="no">08</span>
+              <span class="name">Base64 大小计算器</span>
+              <span class="path">/base64-size-calculator</span>
+              <span class="desc">输入原始体积，算出编码后的字节数和膨胀比例，含换行开销。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+          </div>
+
+          <div class="rest">
+            <div class="rest-head">
+              <span><b>其余 15 个</b> · rest of the set</span>
+              <span class="n">合计 23</span>
+            </div>
+            <div class="rest-grid">
+              <a href="/base64-to-pdf">Base64 转 PDF</a>
+              <a href="/base64-to-word">Base64 转 Word</a>
+              <a href="/base64-to-excel">Base64 转 Excel</a>
+              <a href="/base64-to-pptx">Base64 转 PPTX</a>
+              <a href="/base64-to-svg">Base64 转 SVG</a>
+              <a href="/base64-to-mp3">Base64 转 MP3</a>
+              <a href="/base64-to-video">Base64 转视频</a>
+              <a href="/base64-to-zip">Base64 转 ZIP</a>
+              <a href="/base64-to-txt">Base64 转 TXT</a>
+              <a href="/base64-to-text">Base64 转文本</a>
+              <a href="/base64url">Base64URL</a>
+              <a href="/base64-encrypt">Base64 加解密</a>
+              <a href="/json-to-file">JSON 转文件</a>
+              <a href="/base64-decode-errors">解码错误诊断</a>
+              <a href="/base64-javascript">JavaScript 用法</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec">
+          <div class="sec-head">
+            <span class="sec-no">[02]</span>
+            <span class="sec-title">为什么用它</span>
+            <span class="sec-en">/ why</span>
+            <span class="sec-rule"></span>
+            <span class="sec-meta">浏览器内 · 零请求 · 零账号</span>
+          </div>
+
+          <div class="why-grid">
+            <div class="why">
+              <div class="why-top"><span>本地运行</span><span class="n">01</span></div>
+              <h3>文件不上传</h3>
+              <p>转换跑在浏览器的 FileReader、Blob 和 TextDecoder 上。页面加载完之后不再发请求，文件不经过服务器，也不会留在任何日志里。</p>
+            </div>
+            <div class="why">
+              <div class="why-top"><span>免账号</span><span class="n">02</span></div>
+              <h3>不用注册，也没有额度</h3>
+              <p>没有账号、没有每日次数、没有下载前的 30 秒倒计时。打开页面就能转，关掉就走，本地除了主题偏好不存任何东西。</p>
+            </div>
+            <div class="why">
+              <div class="why-top"><span>即取即用</span><span class="n">03</span></div>
+              <h3>结果直接能拿走</h3>
+              <p>Base64 文本一键复制或存成 .txt，文件直接下载。要嵌进代码时，Data URL 已经带好 MIME 前缀，粘贴即用。</p>
+            </div>
+          </div>
+        </section>
+
+        <footer class="foot">
+          <div class="foot-top">
+            <div class="foot-brand">
+              <div class="b">b<em>64</em>file</div>
+              <p>浏览器里的 Base64 工具箱。转换全部在本机完成，不做账号，也不存文件。</p>
+              <a class="mail" href="mailto:greedy2899@gmail.com">greedy2899@gmail.com</a>
+            </div>
+
+            <div class="foot-col">
+              <h4>转换</h4>
+              <a href="/file-to-base64">文件转 Base64</a>
+              <a href="/base64-to-file">Base64 转文件</a>
+              <a href="/image-to-base64">图片转 Base64</a>
+              <a href="/pdf-to-base64">PDF 转 Base64</a>
+              <a href="/data-url">Data URL 转换</a>
+            </div>
+
+            <div class="foot-col">
+              <h4>开发</h4>
+              <a href="/jwt-decode">JWT 解码</a>
+              <a href="/base64-size-calculator">大小计算器</a>
+              <a href="/base64url">Base64URL</a>
+              <a href="/base64-encrypt">Base64 加解密</a>
+              <a href="/base64-javascript">JavaScript 用法</a>
+            </div>
+
+            <div class="foot-col">
+              <h4>站点</h4>
+              <a href="#tools">工具索引</a>
+              <a href="/base64-javascript/">用法</a>
+              <a href="/about/">关于</a>
+              <a href="/privacy/">隐私</a>
+              <a href="/terms/">条款</a>
+            </div>
+          </div>
+
+          <div class="foot-bottom">
+            <span>© 2026 b64file</span>
+            <span>辽ICP备2026020275号-1</span>
+            <span>全部转换在本地完成 <span class="dot">·</span> b64file.cn</span>
+          </div>
+        </footer>
+
+      </div>
+    </div>
+
+    <!-- ==================== 移动 390 ==================== -->
+    <div class="board-wrap">
+      <div class="board-label">
+        <span class="tick"></span>
+        <b>移动</b>
+        <span class="dim">390 × <span data-h="board-mobile">—</span></span>
+        <span class="dim">/ 首页</span>
+      </div>
+
+      <div class="board board--mobile" id="board-mobile" data-theme="dark">
+
+        <div class="statusbar">
+          <div class="sb-l">
+            <span class="live"><i></i>local only</span>
+            <span class="sb-sep">|</span>
+            <span>b64file.cn</span>
+          </div>
+          <div class="sb-r">
+            <span class="hide-m">23 tools</span>
+          </div>
+        </div>
+
+        <header class="nav">
+          <a class="brand" href="/">b<span class="d">64</span>file</a>
+          <div class="nav-end">
+            <button class="icon-btn" type="button" data-theme-toggle title="切换明暗主题" aria-label="切换明暗主题">◐</button>
+            <a class="gh" href="https://github.com/" rel="noopener" aria-label="GitHub">↗ <span class="txt">github</span></a>
+          </div>
+        </header>
+
+        <section class="hero">
+          <div class="eyebrow">
+            <div class="eyebrow-l">
+              <span class="prompt"><span class="sigil">$</span> b64file --convert<span class="cursor"></span></span>
+              <span class="tag"><i></i>不上传</span>
+            </div>
+          </div>
+
+          <h1 class="h1">文件转 <em class="m">Base64</em>，<br class="only-m"><em class="m">Base64</em> 转回文件。</h1>
+
+          <p class="hero-sub">23 个工具，覆盖图片、PDF、Word、Excel、音视频和 JWT。<b>文件不上传</b>：<span class="nb">转换在你的浏览器里跑</span>，<span class="nb">也不用注册</span>。</p>
+
+          <p class="hero-note"><span class="cm">//</span> Base64 把每 3 个字节编成 4 个 ASCII 字符，体积增加约 <b>33%</b>；剩下要选的只有换行方式，和要不要 URL-safe。</p>
+
+          <div class="term">
+            <div class="term-bar">
+              <span class="dots"><span></span><span></span><span></span></span>
+              <span class="term-path"><span class="tilde">~/</span>upload</span>
+            </div>
+
+            <div class="tabs" role="tablist">
+              <button class="tab on" type="button" role="tab" data-tab="drop"><span class="n">01</span>上传文件</button>
+              <button class="tab" type="button" role="tab" data-tab="paste"><span class="n">02</span>粘贴 Base64</button>
+            </div>
+
+            <div class="term-body">
+              <div class="drop-wrap" data-panel="drop">
+                <div class="drop" data-drop>
+                  <div class="drop-main">
+                    <div class="drop-icon">
+                      <svg width="26" height="26" viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M15 21V4"/><path d="M8 11l7-7 7 7"/><path d="M3 23v4h24v-4"/>
+                      </svg>
+                    </div>
+                    <div class="drop-text">
+                      <p class="drop-title">把文件拖到这里</p>
+                      <p class="drop-sub">或者直接选，支持一次选多个</p>
+                    </div>
+                    <button class="btn-solid" type="button">选择文件</button>
+                  </div>
+                  <p class="formats">PNG · JPG · SVG · PDF · DOCX · XLSX · ZIP · MP4</p>
+                </div>
+              </div>
+
+              <div class="paste" data-panel="paste">
+                <textarea class="paste-area" spellcheck="false" aria-label="粘贴 Base64 字符串">data:text/plain;base64,SGVsbG8sIGI2NGZpbGUu</textarea>
+                <div class="paste-row">
+                  <span>自动识别 MIME</span>
+                  <button class="btn-solid" type="button" style="margin-top:0">还原文件</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="term-foot">
+              <div><span>读取方式</span><b>FileReader · 分片</b></div>
+              <div><span>输出</span><b>Base64 / Base64URL / Data URL</b></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec" id="tools">
+          <div class="sec-head">
+            <span class="sec-no">[01]</span>
+            <span class="sec-title">工具索引</span>
+            <span class="sec-rule"></span>
+            <span class="sec-meta">23 个工具 · 8 主 / 15 其余</span>
+          </div>
+
+          <div class="tbl" role="table" aria-label="主要工具">
+            <a class="tbl-row" href="/file-to-base64">
+              <span class="no">01</span>
+              <span class="name">文件转 Base64</span>
+              <span class="path">/file-to-base64</span>
+              <span class="desc">任意文件读成 Base64 文本，可切换换行、URL-safe，或直接输出 Data URL。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+            <a class="tbl-row" href="/base64-to-file">
+              <span class="no">02</span>
+              <span class="name">Base64 转文件</span>
+              <span class="path">/base64-to-file</span>
+              <span class="desc">粘贴字符串，还原成原始文件并下载。自动识别类型，文件名可以改。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+            <a class="tbl-row" href="/image-to-base64">
+              <span class="no">03</span>
+              <span class="name">图片转 Base64</span>
+              <span class="path">/image-to-base64</span>
+              <span class="desc">PNG、JPG、SVG、WebP 转成 data URL，直接贴进 CSS 的 background。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+            <a class="tbl-row" href="/base64-to-image">
+              <span class="no">04</span>
+              <span class="name">Base64 转图片</span>
+              <span class="path">/base64-to-image</span>
+              <span class="desc">先在页面上预览，确认没花再另存为 PNG 或 JPG，不用先落盘。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+            <a class="tbl-row" href="/pdf-to-base64">
+              <span class="no">05</span>
+              <span class="name">PDF 转 Base64</span>
+              <span class="path">/pdf-to-base64</span>
+              <span class="desc">把 PDF 编码进邮件、iframe 或者接口请求体，附带 MIME 前缀。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+            <a class="tbl-row" href="/jwt-decode">
+              <span class="no">06</span>
+              <span class="name">JWT 解码</span>
+              <span class="path">/jwt-decode</span>
+              <span class="desc">拆开 header 与 payload，格式化 JSON，并标出 exp 还有多久到期。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+            <a class="tbl-row" href="/data-url">
+              <span class="no">07</span>
+              <span class="name">Data URL 转换</span>
+              <span class="path">/data-url</span>
+              <span class="desc">在 data: 前缀和纯 Base64 之间互相剥离、拼回，不丢 MIME。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+            <a class="tbl-row" href="/base64-size-calculator">
+              <span class="no">08</span>
+              <span class="name">Base64 大小计算器</span>
+              <span class="path">/base64-size-calculator</span>
+              <span class="desc">输入原始体积，算出编码后的字节数和膨胀比例，含换行开销。</span>
+              <span class="go">打开 <i>→</i></span>
+            </a>
+          </div>
+
+          <div class="rest">
+            <div class="rest-head">
+              <span><b>其余 15 个</b></span>
+              <span class="n">合计 23</span>
+            </div>
+            <div class="rest-grid">
+              <a href="/base64-to-pdf">Base64 转 PDF</a>
+              <a href="/base64-to-word">Base64 转 Word</a>
+              <a href="/base64-to-excel">Base64 转 Excel</a>
+              <a href="/base64-to-pptx">Base64 转 PPTX</a>
+              <a href="/base64-to-svg">Base64 转 SVG</a>
+              <a href="/base64-to-mp3">Base64 转 MP3</a>
+              <a href="/base64-to-video">Base64 转视频</a>
+              <a href="/base64-to-zip">Base64 转 ZIP</a>
+              <a href="/base64-to-txt">Base64 转 TXT</a>
+              <a href="/base64-to-text">Base64 转文本</a>
+              <a href="/base64url">Base64URL</a>
+              <a href="/base64-encrypt">Base64 加解密</a>
+              <a href="/json-to-file">JSON 转文件</a>
+              <a href="/base64-decode-errors">解码错误诊断</a>
+              <a href="/base64-javascript">JavaScript 用法</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec">
+          <div class="sec-head">
+            <span class="sec-no">[02]</span>
+            <span class="sec-title">为什么用它</span>
+            <span class="sec-rule"></span>
+            <span class="sec-meta">零请求 · 零账号</span>
+          </div>
+
+          <div class="why-grid">
+            <div class="why">
+              <div class="why-top"><span>本地运行</span><span class="n">01</span></div>
+              <h3>文件不上传</h3>
+              <p>转换跑在浏览器的 FileReader、Blob 和 TextDecoder 上。页面加载完之后不再发请求，文件不经过服务器，也不会留在任何日志里。</p>
+            </div>
+            <div class="why">
+              <div class="why-top"><span>免账号</span><span class="n">02</span></div>
+              <h3>不用注册，也没有额度</h3>
+              <p>没有账号、没有每日次数、没有下载前的 30 秒倒计时。打开页面就能转，关掉就走，本地除了主题偏好不存任何东西。</p>
+            </div>
+            <div class="why">
+              <div class="why-top"><span>即取即用</span><span class="n">03</span></div>
+              <h3>结果直接能拿走</h3>
+              <p>Base64 文本一键复制或存成 .txt，文件直接下载。要嵌进代码时，Data URL 已经带好 MIME 前缀，粘贴即用。</p>
+            </div>
+          </div>
+        </section>
+
+        <footer class="foot">
+          <div class="foot-top">
+            <div class="foot-brand">
+              <div class="b">b<em>64</em>file</div>
+              <p>浏览器里的 Base64 工具箱。转换全部在本机完成，不做账号，也不存文件。</p>
+              <a class="mail" href="mailto:greedy2899@gmail.com">greedy2899@gmail.com</a>
+            </div>
+
+            <div class="foot-col">
+              <h4>转换</h4>
+              <a href="/file-to-base64">文件转 Base64</a>
+              <a href="/base64-to-file">Base64 转文件</a>
+              <a href="/image-to-base64">图片转 Base64</a>
+              <a href="/pdf-to-base64">PDF 转 Base64</a>
+            </div>
+
+            <div class="foot-col">
+              <h4>开发</h4>
+              <a href="/jwt-decode">JWT 解码</a>
+              <a href="/base64-size-calculator">大小计算器</a>
+              <a href="/base64url">Base64URL</a>
+              <a href="/base64-encrypt">Base64 加解密</a>
+            </div>
+
+            <div class="foot-col">
+              <h4>站点</h4>
+              <a href="#tools">工具索引</a>
+              <a href="/base64-javascript/">用法</a>
+              <a href="/about/">关于</a>
+              <a href="/privacy/">隐私</a>
+            </div>
+          </div>
+
+          <div class="foot-bottom">
+            <span>© 2026 b64file</span>
+            <span>辽ICP备2026020275号-1</span>
+            <span>全部转换在本地完成 <span class="dot">·</span> b64file.cn</span>
+          </div>
+        </footer>
+
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+(function () {
+  var boards = document.getElementById('boards');
+  var NATURAL = 1440 + 390 + 54;
+
+  /* 量真实高度写进画板标签 */
+  boards.style.zoom = 1;
+  document.querySelectorAll('[data-h]').forEach(function (el) {
+    var t = document.getElementById(el.dataset.h);
+    if (t) el.textContent = Math.round(t.getBoundingClientRect().height);
+  });
+
+  /* 缩放 */
+  function apply(z, active) {
+    boards.style.zoom = z;
+    document.querySelectorAll('[data-zoom]').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.zoom === active);
+    });
+  }
+
+  function fit() {
+    var avail = document.documentElement.clientWidth - 92;
+    var z = Math.min(1, Math.max(0.28, avail / NATURAL));
+    apply(z, 'fit');
+  }
+
+  document.querySelectorAll('[data-zoom]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (b.dataset.zoom === 'fit') fit();
+      else apply(1, '100');
+    });
+  });
+
+  fit();
+  window.addEventListener('resize', function () {
+    var on = document.querySelector('[data-zoom].on');
+    if (on && on.dataset.zoom === 'fit') fit();
+  });
+
+  /* 上传框 tab 切换 */
+  document.querySelectorAll('.board').forEach(function (board) {
+    board.querySelectorAll('.tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        board.querySelectorAll('.tab').forEach(function (t) {
+          t.classList.toggle('on', t === tab);
+        });
+        board.querySelectorAll('[data-panel]').forEach(function (p) {
+          p.classList.toggle('on', p.dataset.panel === tab.dataset.tab);
+        });
+        var dw = board.querySelector('.drop-wrap');
+        if (dw) dw.classList.toggle('off', tab.dataset.tab !== 'drop');
+      });
+    });
+
+    /* 拖拽高亮 */
+    var drop = board.querySelector('[data-drop]');
+    if (drop) {
+      ['dragenter', 'dragover'].forEach(function (ev) {
+        drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('hot'); });
+      });
+      ['dragleave', 'drop'].forEach(function (ev) {
+        drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('hot'); });
+      });
+    }
+
+    /* 主题切换 */
+    var tgl = board.querySelector('[data-theme-toggle]');
+    if (tgl) {
+      tgl.addEventListener('click', function () {
+        var light = board.dataset.theme === 'light';
+        board.dataset.theme = light ? 'dark' : 'light';
+      });
+    }
+  });
+})();
+</script>
+</body>
+</html>

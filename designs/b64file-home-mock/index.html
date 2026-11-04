@@ -1,0 +1,1562 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>b64file 首页重设计 · 桌面 1440 / 移动 390</title>
+<style>
+/* ============================================================
+   b64file — 首页重设计 v1
+   画布层：中性灰，承载两块画板
+   画板层：暖纸 + 赭红，沿用站点既有 token，只做版式与层级的重排
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #dedbd4;
+}
+
+body {
+  color: #4a463f;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 画布 ---------- */
+
+.canvas { padding: 26px 48px 96px; }
+
+.canvas-head {
+  max-width: 1886px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 28px;
+  flex-wrap: wrap;
+}
+
+.ch-left {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: #2f2c27;
+}
+
+.ch-title { font-weight: 700; }
+.ch-slash { color: #7d786f; }
+.ch-sub { color: #57534c; font-size: 12px; }
+
+.ch-right { display: flex; align-items: center; gap: 14px; }
+
+.zoom {
+  display: flex;
+  border: 1px solid #bdb8ae;
+  background: #e6e3dc;
+}
+
+.zoom button {
+  appearance: none;
+  border: 0;
+  border-right: 1px solid #cfcac0;
+  background: transparent;
+  color: #4f4b45;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 5px 11px;
+  cursor: pointer;
+}
+
+.zoom button:last-child { border-right: 0; }
+.zoom button:hover { color: #21201e; }
+.zoom button.on {
+  background: #faf9f5;
+  color: #a34a2a;
+  box-shadow: inset 0 -2px 0 #a34a2a;
+}
+
+.zoom-out {
+  font-size: 11px;
+  color: #4f4b45;
+  min-width: 62px;
+  text-align: right;
+}
+
+.canvas-spec {
+  max-width: 1886px;
+  margin: 14px auto 26px;
+  padding-top: 11px;
+  border-top: 1px solid #cbc7be;
+  display: flex;
+  align-items: center;
+  gap: 10px 22px;
+  flex-wrap: wrap;
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  color: #57534c;
+}
+
+.swatch { display: inline-flex; align-items: center; gap: 6px; }
+
+.swatch i {
+  width: 11px;
+  height: 11px;
+  display: block;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+}
+
+.spec-div { width: 1px; height: 12px; background: #c3bfb6; }
+
+.boards {
+  display: flex;
+  align-items: flex-start;
+  gap: 56px;
+  zoom: 1;
+}
+
+.board-wrap {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.board-label {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  color: #423e38;
+  text-transform: uppercase;
+}
+
+.board-label b { font-weight: 700; }
+.board-label .dim { color: #6f6a61; letter-spacing: 0.08em; }
+
+/* ---------- 画板通用 token ---------- */
+
+.board {
+  --bg: #faf9f5;
+  --surface: #ffffff;
+  --surface-2: #f0eee7;
+  --ink: #21201e;
+  --muted: #5f5a52;
+  --subtle: #736d62;
+  --border: #e0dcd0;
+  --border-strong: #c9c3b6;
+  --accent: #c15f3c;
+  --accent-strong: #a34a2a;
+  --accent-soft: #f9ece5;
+  --success: #44704f;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --serif: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+
+  width: 1440px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.7;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.05), 0 30px 70px -34px rgba(0, 0, 0, 0.42);
+  overflow: hidden;
+}
+
+.board--mobile {
+  width: 390px;
+  font-size: 15px;
+}
+
+.board[data-theme="dark"] {
+  --bg: #1f1e1d;
+  --surface: #262524;
+  --surface-2: #302f2d;
+  --ink: #e8e6e1;
+  --muted: #a5a099;
+  --subtle: #8e887f;
+  --border: #3b3936;
+  --border-strong: #4a4744;
+  --accent: #d97757;
+  --accent-strong: #e8875d;
+  --accent-soft: #3a2a21;
+  --success: #82b394;
+}
+
+.board a { color: inherit; text-decoration: none; }
+
+.nb { white-space: nowrap; }
+
+.wrap {
+  width: 1120px;
+  margin: 0 auto;
+}
+
+/* ---------- 顶部导航 ---------- */
+
+.nav { border-bottom: 1px solid var(--border); }
+
+.nav-in {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  height: 66px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.brand em {
+  font-style: normal;
+  color: var(--accent-strong);
+}
+
+.brand .brand-dim {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--subtle);
+  letter-spacing: 0.04em;
+  margin-left: 9px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.nav-links a { color: var(--muted); }
+.nav-links a:hover { color: var(--ink); }
+
+.has-menu { position: relative; }
+
+.menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  color: var(--ink);
+  padding: 8px 0;
+  cursor: default;
+}
+
+.caret {
+  font-size: 9px;
+  color: var(--subtle);
+  transform: translateY(-1px);
+}
+
+.has-menu:hover .caret { color: var(--accent); }
+
+.menu {
+  position: absolute;
+  top: 42px;
+  left: -22px;
+  width: 520px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.4);
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s;
+  z-index: 30;
+}
+
+.has-menu:hover .menu,
+.has-menu:focus-within .menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.menu a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.menu a:hover { background: var(--surface-2); }
+
+.menu a span {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.menu-foot {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  padding: 10px 12px 4px;
+  border-top: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--accent-strong);
+  display: flex;
+  justify-content: space-between;
+}
+
+.menu-foot:hover { background: var(--accent-soft); }
+
+.nav-end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-btn {
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.gh {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 2px;
+}
+
+.gh:hover { color: var(--ink); }
+.gh .up { color: var(--subtle); }
+.gh:hover .up { color: var(--accent); }
+
+/* ---------- Hero ---------- */
+
+.hero { padding: 76px 0 0; }
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.chip i {
+  width: 6px;
+  height: 6px;
+  display: block;
+  background: var(--success);
+}
+
+.hero-title {
+  margin: 22px 0 0;
+  font-family: var(--serif);
+  font-size: 54px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.012em;
+  color: var(--ink);
+}
+
+.hero-title .lat {
+  font-family: var(--mono);
+  font-size: 0.76em;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+}
+
+.hero-sub {
+  margin: 24px 0 0;
+  max-width: 33em;
+  font-size: 16.5px;
+  line-height: 1.85;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.hero-sub b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.hero-note {
+  margin: 30px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  max-width: 33em;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.9;
+  color: var(--subtle);
+  letter-spacing: 0.01em;
+}
+
+.hero-note b { color: var(--muted); font-weight: 400; }
+
+/* ---------- 上传卡 ---------- */
+
+.upload {
+  margin-top: 0;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.upload-tabs { display: flex; border-bottom: 1px solid var(--border); }
+
+.upload-tabs button {
+  appearance: none;
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+.upload-tabs button:last-child { border-right: 0; }
+
+.tabs-note {
+  margin-left: auto;
+  align-self: center;
+  padding: 0 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--subtle);
+  white-space: nowrap;
+}
+
+.upload-tabs button.on {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.upload-body { padding: 18px; }
+
+.drop {
+  border: 1px dashed var(--border-strong);
+  background: var(--bg);
+  padding: 52px 20px 46px;
+  text-align: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.drop:hover {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-soft);
+}
+
+.drop-mark {
+  width: 30px;
+  height: 30px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--accent-strong);
+}
+
+.drop:hover .drop-mark { border-color: var(--accent); }
+
+.drop-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.drop-sub {
+  margin: 5px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.drop-btn {
+  appearance: none;
+  margin: 16px 0 0;
+  border: 1px solid var(--accent-strong);
+  background: var(--accent-strong);
+  color: #ffffff;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 11px 30px;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.drop-btn:hover {
+  background: #8f3f23;
+  border-color: #8f3f23;
+}
+
+.board[data-theme="dark"] .drop-btn { color: #1f1e1d; }
+.board[data-theme="dark"] .drop-btn:hover { background: #f0a184; border-color: #f0a184; }
+
+.drop-formats {
+  margin: 16px 0 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  color: var(--subtle);
+  line-height: 1.9;
+}
+
+.upload-foot {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 40px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--subtle);
+}
+
+.upload-foot div { display: flex; justify-content: space-between; gap: 12px; }
+.upload-foot b { color: var(--muted); font-weight: 400; }
+
+/* ---------- 章节骨架 ---------- */
+
+.sec {
+  border-top: 1px solid var(--border);
+  margin-top: 78px;
+  padding-top: 15px;
+}
+
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 26px;
+}
+
+.sec-title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.sec-title i {
+  font-style: normal;
+  color: var(--accent-strong);
+  letter-spacing: 0;
+}
+
+.sec-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--subtle);
+}
+
+/* ---------- 工具网格 ---------- */
+
+.tools {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+
+.tool {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 156px;
+  padding: 18px 20px 16px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.14s ease;
+}
+
+.tool:hover { background: var(--surface); }
+
+.tool-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+}
+
+.tool-idx { color: var(--subtle); }
+.tool.is-core .tool-idx { color: var(--accent-strong); }
+
+.tool-name {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+
+.tool:hover .tool-name { color: var(--accent-strong); }
+
+.tool-desc {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.tool-foot {
+  margin-top: auto;
+  padding-top: 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: -0.01em;
+  color: var(--subtle);
+}
+
+.tool-go { color: var(--subtle); }
+.tool-path { color: var(--subtle); }
+.tool:hover .tool-go { color: var(--accent-strong); }
+
+/* ---------- 其余工具 ---------- */
+
+.more {
+  margin-top: 26px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.more-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--subtle);
+}
+
+.more-links {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 20px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.more-links a { color: var(--muted); }
+.more-links a:hover { color: var(--accent-strong); }
+
+/* ---------- 为什么用它 ---------- */
+
+.why { border-top: 1px solid var(--border); }
+
+.why-item {
+  display: grid;
+  grid-template-columns: 208px minmax(0, 1fr);
+  gap: 24px 32px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: start;
+}
+
+.why-item:last-child { border-bottom: 0; padding-bottom: 0; }
+
+.why-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.why-num {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--accent-strong);
+}
+
+.why-head h3 {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.5;
+}
+
+.why-item p {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 13.5px;
+  line-height: 1.85;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.why-item code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  color: var(--ink);
+  background: var(--surface-2);
+  padding: 1px 4px;
+}
+
+/* ---------- 页脚 ---------- */
+
+.foot {
+  border-top: 1px solid var(--border);
+  margin-top: 64px;
+  padding: 32px 0 28px;
+}
+
+.foot-grid {
+  display: grid;
+  grid-template-columns: 300px repeat(3, minmax(0, 1fr));
+  gap: 36px;
+}
+
+.foot-brand .brand {
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.foot-brand p {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.85;
+  color: var(--muted);
+  max-width: 24ch;
+}
+
+.foot-mail {
+  margin-top: 10px !important;
+  font-family: var(--mono);
+  font-size: 10.5px !important;
+  letter-spacing: 0.01em;
+  color: var(--subtle) !important;
+  max-width: none !important;
+}
+
+.foot-mail a { border-bottom: 1px solid var(--border-strong); padding-bottom: 1px; }
+.foot-mail a:hover { color: var(--accent-strong); border-color: var(--accent); }
+
+.foot-col h4 {
+  margin: 0 0 12px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  color: var(--subtle);
+  text-transform: uppercase;
+}
+
+.foot-col ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.foot-col a { color: var(--muted); }
+.foot-col a:hover { color: var(--accent-strong); }
+
+.foot-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 32px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  color: var(--subtle);
+  line-height: 1.9;
+}
+
+.foot-bar .sep { padding: 0 8px; color: var(--subtle); }
+
+/* ============================================================
+   移动端画板 390
+   ============================================================ */
+
+.board--mobile .wrap {
+  width: auto;
+  margin: 0;
+  padding: 0 20px;
+}
+
+.board--mobile .nav-in { height: 60px; gap: 12px; }
+.board--mobile .brand { font-size: 16px; }
+.board--mobile .brand .brand-dim { display: none; }
+.board--mobile .nav-links { display: none; }
+.board--mobile .nav-end { gap: 8px; }
+.board--mobile .icon-btn {
+  width: 44px;
+  height: 44px;
+  font-size: 13px;
+  border-color: transparent;
+  background: transparent;
+}
+.board--mobile .gh span:not(.up) { display: none; }
+.board--mobile .gh { font-size: 12px; padding: 4px; }
+
+.menu-lines { display: flex; flex-direction: column; gap: 4px; }
+
+.menu-lines span {
+  display: block;
+  width: 13px;
+  height: 1px;
+  background: currentColor;
+}
+
+.board--mobile .hero { padding: 30px 0 0; }
+.board--mobile .hero-grid { display: block; gap: 22px; }
+.board--mobile .chip { font-size: 9.5px; letter-spacing: 0.11em; }
+
+.board--mobile .hero-title {
+  margin-top: 16px;
+  font-size: 31px;
+  line-height: 1.26;
+  letter-spacing: 0.008em;
+}
+
+.board--mobile .hero-title .lat { font-size: 0.74em; }
+
+.board--mobile .hero-sub {
+  margin-top: 16px;
+  font-size: 13.5px;
+  line-height: 1.85;
+  max-width: none;
+}
+
+.board--mobile .hero-note {
+  margin-top: 20px;
+  padding-top: 12px;
+  font-size: 10.5px;
+  max-width: none;
+}
+
+.board--mobile .upload { margin-top: 26px; }
+
+.board--mobile .upload-tabs button {
+  flex: 1;
+  font-size: 11.5px;
+  padding: 10px 10px;
+}
+
+.board--mobile .upload-body { padding: 14px; }
+.board--mobile .drop { padding: 26px 16px 22px; }
+.board--mobile .drop-mark { width: 26px; height: 26px; margin-bottom: 10px; font-size: 12px; }
+.board--mobile .drop-title { font-size: 14.5px; }
+.board--mobile .drop-sub { font-size: 11.5px; }
+.board--mobile .drop-btn { margin-top: 14px; font-size: 12px; padding: 9px 22px; }
+
+.board--mobile .drop-btn--wide {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  font-size: 13px;
+  padding: 12px 10px;
+}
+.board--mobile .drop-formats { font-size: 10.5px; margin-top: 14px; letter-spacing: 0.03em; }
+.board--mobile .upload-foot { font-size: 10.5px; }
+
+.board--mobile .sec { margin-top: 40px; padding-top: 13px; }
+.board--mobile .sec-head { margin-bottom: 16px; }
+.board--mobile .sec-title { font-size: 10px; letter-spacing: 0.12em; gap: 8px; }
+.board--mobile .sec-meta { font-size: 9.5px; letter-spacing: 0.02em; }
+
+.board--mobile .tools {
+  display: block;
+  border-left: 0;
+}
+
+.board--mobile .tool {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "idx name go"
+    "idx desc go";
+  gap: 2px 10px;
+  min-height: 0;
+  padding: 13px 0;
+  border-right: 0;
+}
+
+.board--mobile .tool-top {
+  grid-area: idx;
+  align-self: start;
+  padding-top: 4px;
+  font-size: 9.5px;
+}
+
+.board--mobile .tool-name {
+  grid-area: name;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.board--mobile .tool-desc {
+  grid-area: desc;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.board--mobile .tool-foot {
+  grid-area: go;
+  align-self: center;
+  margin-top: 0;
+  padding-top: 0;
+  font-size: 11px;
+}
+
+.board--mobile .tool-path { display: none; }
+
+.board--mobile .more {
+  display: block;
+  margin-top: 14px;
+  padding-top: 13px;
+}
+
+.board--mobile .more-label { font-size: 9.5px; letter-spacing: 0.08em; padding-top: 0; }
+
+.board--mobile .more-links {
+  margin-top: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  font-size: 12px;
+}
+
+.board--mobile .why { border-top: 1px solid var(--border); }
+.board--mobile .why-item {
+  display: block;
+  padding: 18px 0;
+}
+.board--mobile .why-head { gap: 8px; }
+.board--mobile .why-num { font-size: 9.5px; }
+.board--mobile .why-head h3 { font-size: 15px; }
+.board--mobile .why-item p { margin-top: 6px; font-size: 12.5px; line-height: 1.8; max-width: none; }
+
+.board--mobile .foot { margin-top: 38px; padding: 22px 0 20px; }
+.board--mobile .foot-grid { grid-template-columns: 1fr 1fr; gap: 24px 20px; }
+.board--mobile .foot-brand { grid-column: 1 / -1; }
+.board--mobile .foot-brand p { font-size: 11.5px; max-width: none; }
+.board--mobile .foot-col h4 { font-size: 9.5px; margin-bottom: 9px; }
+.board--mobile .foot-col ul { font-size: 11.5px; gap: 6px; }
+.board--mobile .foot-bar {
+  display: block;
+  margin-top: 22px;
+  padding-top: 12px;
+  font-size: 9.5px;
+  line-height: 1.9;
+}
+
+.board--mobile .foot-bar .bar-row { display: block; }
+.board--mobile .foot-bar .sep { padding: 0 5px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<main class="canvas" id="canvas">
+  <div class="canvas-head">
+    <div class="ch-left">
+      <span class="ch-title">b64file</span>
+      <span class="ch-slash">/</span>
+      <span>首页重设计</span>
+      <span class="ch-slash">/</span>
+      <span class="ch-sub">v1 · 2026-10-29</span>
+    </div>
+    <div class="ch-right">
+      <div class="zoom" role="group" aria-label="缩放">
+        <button type="button" data-zoom="fit" class="on">适应宽度</button>
+        <button type="button" data-zoom="1">100%</button>
+      </div>
+      <span class="zoom-out" id="zoomVal">—</span>
+    </div>
+  </div>
+
+  <div class="canvas-spec">
+    <span class="swatch"><i style="background:#faf9f5"></i>纸底 #faf9f5</span>
+    <span class="swatch"><i style="background:#21201e"></i>正文 #21201e</span>
+    <span class="swatch"><i style="background:#c15f3c"></i>赭红 #c15f3c</span>
+    <span class="swatch"><i style="background:#e0dcd0"></i>描边 #e0dcd0</span>
+    <span class="spec-div"></span>
+    <span>标题 宋体衬线 / 正文 系统无衬线 / 标签与路径 等宽</span>
+    <span class="spec-div"></span>
+    <span>无圆角 · 无卡片阴影 · 发丝线分区</span>
+  </div>
+
+  <div class="boards" id="boards">
+
+    <!-- ============================ 桌面 1440 ============================ -->
+    <div class="board-wrap">
+      <div class="board-label">
+        <b>桌面</b>
+        <span class="dim">1440</span>
+        <span class="dim" data-h="board-desktop">× —</span>
+        <span class="dim">首页</span>
+      </div>
+
+      <div class="board" id="board-desktop" data-theme="light" data-screen-label="01 桌面首页">
+
+        <header class="nav">
+          <div class="wrap nav-in">
+            <a class="brand" href="/">
+              b<em>64</em>file
+              <span class="brand-dim">浏览器内转换</span>
+            </a>
+
+            <nav class="nav-links" aria-label="主导航">
+              <div class="has-menu">
+                <a class="menu-trigger" href="#tools">工具<span class="caret">▾</span></a>
+                <div class="menu">
+                  <a href="/file-to-base64/">文件转 Base64 <span>/file-to-base64</span></a>
+                  <a href="/base64-to-file/">Base64 转文件 <span>/base64-to-file</span></a>
+                  <a href="/image-to-base64/">图片转 Base64 <span>/image-to-base64</span></a>
+                  <a href="/base64-to-image/">Base64 转图片 <span>/base64-to-image</span></a>
+                  <a href="/pdf-to-base64/">PDF 转 Base64 <span>/pdf-to-base64</span></a>
+                  <a href="/jwt-decode/">JWT 解码 <span>/jwt-decode</span></a>
+                  <a href="/data-url/">Data URL 转换 <span>/data-url</span></a>
+                  <a href="/base64-size-calculator/">大小计算器 <span>/base64-size-calculator</span></a>
+                  <a class="menu-foot" href="#tools">查看全部 23 个工具 <span>→</span></a>
+                </div>
+              </div>
+              <a href="/base64-javascript/">用法</a>
+              <a href="/about/">关于</a>
+            </nav>
+
+            <div class="nav-end">
+              <button class="icon-btn" type="button" data-theme-toggle title="明暗主题" aria-label="切换明暗主题">◐</button>
+              <a class="gh" href="https://github.com/" rel="noopener">GitHub <span class="up">↗</span></a>
+            </div>
+          </div>
+        </header>
+
+        <section class="hero">
+          <div class="wrap">
+            <div class="hero-grid">
+              <div>
+                <span class="chip"><i></i>本地处理 · 不上传文件</span>
+                <h1 class="hero-title">文件转 <span class="lat">Base64</span>，<span class="lat">Base64</span> 转回文件。</h1>
+                <p class="hero-sub">23 个工具，覆盖图片、PDF、Word、Excel、音视频和 JWT。<b>文件不上传</b>：转换在你的<span class="nb">浏览器</span>里跑，也不用注册。</p>
+                <p class="hero-note">Base64 把每 3 个字节编成 4 个 ASCII 字符，体积增加约 <b>33%</b>；<br>剩下要选的只有换行方式，和要不要 URL-safe。</p>
+              </div>
+
+              <aside class="upload" aria-label="上传文件">
+                <div class="upload-tabs">
+                  <button type="button" class="on">上传文件</button>
+                  <button type="button">粘贴 Base64</button>
+                  <span class="tabs-note">本地读取</span>
+                </div>
+                <div class="upload-body">
+                  <div class="drop">
+                    <div class="drop-mark">↑</div>
+                    <p class="drop-title">把文件拖到这里</p>
+                    <p class="drop-sub">或者直接选，支持一次选多个</p>
+                    <button class="drop-btn" type="button">选择文件</button>
+                    <p class="drop-formats">PNG JPG GIF WEBP SVG PDF DOCX XLSX PPTX ZIP MP3 MP4</p>
+                  </div>
+                  <div class="upload-foot">
+                    <div><span>读取方式</span><b>FileReader · 分片</b></div>
+                    <div><span>输出</span><b>Base64 / Base64URL / Data URL</b></div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec" id="tools">
+          <div class="wrap">
+            <div class="sec-head">
+              <div class="sec-title"><i>01</i>工具索引</div>
+              <div class="sec-meta">按用途排列 · 每个工具一个独立页面</div>
+            </div>
+
+            <div class="tools">
+              <a class="tool is-core" href="/file-to-base64/">
+                <div class="tool-top"><span class="tool-idx">01</span></div>
+                <h3 class="tool-name">文件转 Base64</h3>
+                <p class="tool-desc">任意文件读成 Base64 文本，可切换换行、URL-safe，或直接输出 Data URL。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span><span class="tool-path">/file-to-base64</span></div>
+              </a>
+
+              <a class="tool is-core" href="/base64-to-file/">
+                <div class="tool-top"><span class="tool-idx">02</span></div>
+                <h3 class="tool-name">Base64 转文件</h3>
+                <p class="tool-desc">粘贴字符串，还原成原始文件并下载。自动识别类型，文件名可以改。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span><span class="tool-path">/base64-to-file</span></div>
+              </a>
+
+              <a class="tool" href="/image-to-base64/">
+                <div class="tool-top"><span class="tool-idx">03</span></div>
+                <h3 class="tool-name">图片转 Base64</h3>
+                <p class="tool-desc">PNG、JPG、SVG、WebP 转成 data URL，直接贴进 CSS 的 background。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span><span class="tool-path">/image-to-base64</span></div>
+              </a>
+
+              <a class="tool" href="/base64-to-image/">
+                <div class="tool-top"><span class="tool-idx">04</span></div>
+                <h3 class="tool-name">Base64 转图片</h3>
+                <p class="tool-desc">先在页面上预览，确认没花再另存为 PNG 或 JPG，不用先落盘。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span><span class="tool-path">/base64-to-image</span></div>
+              </a>
+
+              <a class="tool" href="/pdf-to-base64/">
+                <div class="tool-top"><span class="tool-idx">05</span></div>
+                <h3 class="tool-name">PDF 转 Base64</h3>
+                <p class="tool-desc">把 PDF 编码进邮件、iframe 或者接口请求体，附带 MIME 前缀。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span><span class="tool-path">/pdf-to-base64</span></div>
+              </a>
+
+              <a class="tool" href="/jwt-decode/">
+                <div class="tool-top"><span class="tool-idx">06</span></div>
+                <h3 class="tool-name">JWT 解码</h3>
+                <p class="tool-desc">拆开 header 与 payload，格式化 JSON，并标出 exp 还有多久到期。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span><span class="tool-path">/jwt-decode</span></div>
+              </a>
+
+              <a class="tool" href="/data-url/">
+                <div class="tool-top"><span class="tool-idx">07</span></div>
+                <h3 class="tool-name">Data URL 转换</h3>
+                <p class="tool-desc">在 <code>data:</code> 前缀和纯 Base64 之间互相剥离、拼回，不丢 MIME。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span><span class="tool-path">/data-url</span></div>
+              </a>
+
+              <a class="tool" href="/base64-size-calculator/">
+                <div class="tool-top"><span class="tool-idx">08</span></div>
+                <h3 class="tool-name">Base64 大小计算器</h3>
+                <p class="tool-desc">输入原始体积，算出编码后的字节数和膨胀比例，含换行开销。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span><span class="tool-path">/base64-size-calculator</span></div>
+              </a>
+            </div>
+
+            <div class="more">
+              <span class="more-label">其余 15 个</span>
+              <div class="more-links">
+                <a href="/base64-to-pdf/">Base64 转 PDF</a>
+                <a href="/base64-to-word/">Base64 转 Word</a>
+                <a href="/base64-to-excel/">Base64 转 Excel</a>
+                <a href="/base64-to-pptx/">Base64 转 PPTX</a>
+                <a href="/base64-to-svg/">Base64 转 SVG</a>
+                <a href="/base64-to-mp3/">Base64 转 MP3</a>
+                <a href="/base64-to-video/">Base64 转视频</a>
+                <a href="/base64-to-zip/">Base64 转 ZIP</a>
+                <a href="/base64-to-txt/">Base64 转 TXT</a>
+                <a href="/base64-to-text/">Base64 转文本</a>
+                <a href="/base64url/">Base64URL</a>
+                <a href="/base64-encrypt/">Base64 加解密</a>
+                <a href="/json-to-file/">JSON 转文件</a>
+                <a href="/base64-decode-errors/">解码错误诊断</a>
+                <a href="/base64-javascript/">JavaScript 用法</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec">
+          <div class="wrap">
+            <div class="sec-head">
+              <div class="sec-title"><i>02</i>为什么用它</div>
+              <div class="sec-meta">三条，都和「少一步」有关</div>
+            </div>
+
+            <div class="why">
+              <div class="why-item">
+                <div class="why-head"><span class="why-num">01</span><h3>文件不上传</h3></div>
+                <p>转换跑在浏览器的 <code>FileReader</code>、<code>Blob</code> 和 <code>TextDecoder</code> 上。页面加载完之后不再发请求，文件不经过服务器，也不会留在任何日志里。</p>
+              </div>
+              <div class="why-item">
+                <div class="why-head"><span class="why-num">02</span><h3>不用注册，也没有额度</h3></div>
+                <p>没有账号、没有每日次数、没有下载前的 30 秒倒计时。打开页面就能转，关掉就走，本地除了主题偏好不存任何东西。</p>
+              </div>
+              <div class="why-item">
+                <div class="why-head"><span class="why-num">03</span><h3>结果直接能拿走</h3></div>
+                <p>Base64 文本一键复制或存成 <code>.txt</code>，文件直接下载。要嵌进代码时，<span class="nb">Data URL</span> 已经带好 MIME 前缀，粘贴即用。</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer class="foot">
+          <div class="wrap">
+            <div class="foot-grid">
+              <div class="foot-brand">
+                <a class="brand" href="/">b<em>64</em>file</a>
+                <p>浏览器里的 Base64 工具箱。转换全部在本机完成，不做账号，也不存文件。</p>
+                <p class="foot-mail">反馈 <a href="mailto:greedy2899@gmail.com">greedy2899@gmail.com</a></p>
+              </div>
+
+              <div class="foot-col">
+                <h4>转换</h4>
+                <ul>
+                  <li><a href="/file-to-base64/">文件转 Base64</a></li>
+                  <li><a href="/base64-to-file/">Base64 转文件</a></li>
+                  <li><a href="/image-to-base64/">图片转 Base64</a></li>
+                  <li><a href="/pdf-to-base64/">PDF 转 Base64</a></li>
+                  <li><a href="/base64-to-word/">Base64 转 Word</a></li>
+                </ul>
+              </div>
+
+              <div class="foot-col">
+                <h4>开发</h4>
+                <ul>
+                  <li><a href="/jwt-decode/">JWT 解码</a></li>
+                  <li><a href="/data-url/">Data URL 转换</a></li>
+                  <li><a href="/base64url/">Base64URL</a></li>
+                  <li><a href="/base64-size-calculator/">大小计算器</a></li>
+                  <li><a href="/base64-javascript/">JavaScript 用法</a></li>
+                </ul>
+              </div>
+
+              <div class="foot-col">
+                <h4>站点</h4>
+                <ul>
+                  <li><a href="/about/">关于 b64file</a></li>
+                  <li><a href="/privacy/">隐私说明</a></li>
+                  <li><a href="/terms/">使用条款</a></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="foot-bar">
+              <div>© 2026 b64file<span class="sep">/</span>辽ICP备2026020275号-1<span class="sep">/</span>辽公网安备21010502000962号</div>
+              <div>全部转换在本地完成 · b64file.cn</div>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ============================ 移动 390 ============================ -->
+    <div class="board-wrap">
+      <div class="board-label">
+        <b>移动</b>
+        <span class="dim">390</span>
+        <span class="dim" data-h="board-mobile">× —</span>
+        <span class="dim">首页</span>
+      </div>
+
+      <div class="board board--mobile" id="board-mobile" data-theme="light" data-screen-label="02 移动首页">
+
+        <header class="nav">
+          <div class="wrap nav-in">
+            <a class="brand" href="/">b<em>64</em>file</a>
+            <div class="nav-end">
+              <button class="icon-btn" type="button" data-theme-toggle title="明暗主题" aria-label="切换明暗主题">◐</button>
+              <button class="icon-btn" type="button" aria-label="打开菜单">
+                <span class="menu-lines"><span></span><span></span><span></span></span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <section class="hero">
+          <div class="wrap">
+            <span class="chip"><i></i>本地处理 · 不上传文件</span>
+            <h1 class="hero-title">文件转 <span class="lat">Base64</span>，<span class="lat">Base64</span> 转回文件。</h1>
+            <p class="hero-sub">23 个工具，覆盖图片、PDF、Word、Excel、音视频和 JWT。<b>文件不上传</b>，转换在你的浏览器里跑，也不用注册。</p>
+
+            <aside class="upload" aria-label="上传文件">
+              <div class="upload-tabs">
+                <button type="button" class="on">上传文件</button>
+                <button type="button">粘贴 Base64</button>
+              </div>
+              <div class="upload-body">
+                <div class="drop">
+                  <div class="drop-mark">↑</div>
+                  <p class="drop-title">把文件拖到这里</p>
+                  <p class="drop-sub">或点按下方按钮选择 · 支持多选</p>
+                  <p class="drop-formats">PNG JPG PDF DOCX XLSX ZIP MP3 MP4</p>
+                </div>
+                <button class="drop-btn drop-btn--wide" type="button">选择文件</button>
+                <div class="upload-foot">
+                  <div><span>读取方式</span><b>FileReader · 分片</b></div>
+                  <div><span>输出</span><b>Base64 / Data URL</b></div>
+                </div>
+              </div>
+            </aside>
+
+            <p class="hero-note">Base64 把每 3 个字节编成 4 个 ASCII 字符，体积增加约 <b>33%</b>。</p>
+          </div>
+        </section>
+
+        <section class="sec">
+          <div class="wrap">
+            <div class="sec-head">
+              <div class="sec-title"><i>01</i>工具索引</div>
+              <div class="sec-meta">23 个页面</div>
+            </div>
+
+            <div class="tools">
+              <a class="tool is-core" href="/file-to-base64/">
+                <div class="tool-top"><span class="tool-idx">01</span></div>
+                <h3 class="tool-name">文件转 Base64</h3>
+                <p class="tool-desc">任意文件读成 Base64 文本，可切换行与 URL-safe。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span></div>
+              </a>
+              <a class="tool is-core" href="/base64-to-file/">
+                <div class="tool-top"><span class="tool-idx">02</span></div>
+                <h3 class="tool-name">Base64 转文件</h3>
+                <p class="tool-desc">粘贴字符串，还原成原始文件并下载。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span></div>
+              </a>
+              <a class="tool" href="/image-to-base64/">
+                <div class="tool-top"><span class="tool-idx">03</span></div>
+                <h3 class="tool-name">图片转 Base64</h3>
+                <p class="tool-desc">PNG、JPG、SVG 转 data URL，贴进 CSS。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span></div>
+              </a>
+              <a class="tool" href="/base64-to-image/">
+                <div class="tool-top"><span class="tool-idx">04</span></div>
+                <h3 class="tool-name">Base64 转图片</h3>
+                <p class="tool-desc">先预览，再另存为 PNG 或 JPG。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span></div>
+              </a>
+              <a class="tool" href="/pdf-to-base64/">
+                <div class="tool-top"><span class="tool-idx">05</span></div>
+                <h3 class="tool-name">PDF 转 Base64</h3>
+                <p class="tool-desc">编码进邮件、iframe 或接口请求体。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span></div>
+              </a>
+              <a class="tool" href="/jwt-decode/">
+                <div class="tool-top"><span class="tool-idx">06</span></div>
+                <h3 class="tool-name">JWT 解码</h3>
+                <p class="tool-desc">拆 header 与 payload，标出 exp 到期时间。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span></div>
+              </a>
+              <a class="tool" href="/data-url/">
+                <div class="tool-top"><span class="tool-idx">07</span></div>
+                <h3 class="tool-name">Data URL 转换</h3>
+                <p class="tool-desc">data: 前缀与纯 Base64 互相剥离、拼回。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span></div>
+              </a>
+              <a class="tool" href="/base64-size-calculator/">
+                <div class="tool-top"><span class="tool-idx">08</span></div>
+                <h3 class="tool-name">大小计算器</h3>
+                <p class="tool-desc">算编码后体积和膨胀比例，含换行开销。</p>
+                <div class="tool-foot"><span class="tool-go">打开 →</span></div>
+              </a>
+            </div>
+
+            <div class="more">
+              <span class="more-label">其余 15 个</span>
+              <div class="more-links">
+                <a href="/base64-to-pdf/">转 PDF</a>
+                <a href="/base64-to-word/">转 Word</a>
+                <a href="/base64-to-excel/">转 Excel</a>
+                <a href="/base64-to-pptx/">转 PPTX</a>
+                <a href="/base64-to-svg/">转 SVG</a>
+                <a href="/base64-to-mp3/">转 MP3</a>
+                <a href="/base64-to-video/">转视频</a>
+                <a href="/base64-to-zip/">转 ZIP</a>
+                <a href="/base64url/">Base64URL</a>
+                <a href="/json-to-file/">JSON 转文件</a>
+                <a href="/base64-to-txt/">转 TXT</a>
+                <a href="/base64-to-text/">转文本</a>
+                <a href="/base64-encrypt/">加解密</a>
+                <a href="/base64-decode-errors/">错误诊断</a>
+                <a href="/base64-javascript/">JS 用法</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec">
+          <div class="wrap">
+            <div class="sec-head">
+              <div class="sec-title"><i>02</i>为什么用它</div>
+            </div>
+
+            <div class="why">
+              <div class="why-item">
+                <div class="why-head"><span class="why-num">01</span><h3>文件不上传</h3></div>
+                <p>转换跑在浏览器的 FileReader、Blob 和 TextDecoder 上，页面加载完就不再发请求，文件不经过服务器。</p>
+              </div>
+              <div class="why-item">
+                <div class="why-head"><span class="why-num">02</span><h3>不用注册，也没有额度</h3></div>
+                <p>没有账号、没有每日次数、没有下载前的倒计时。打开就能转，关掉就走。</p>
+              </div>
+              <div class="why-item">
+                <div class="why-head"><span class="why-num">03</span><h3>结果直接能拿走</h3></div>
+                <p>Base64 一键复制或存成 .txt，文件直接下载；<span class="nb">Data URL</span> 已带好 MIME 前缀。</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer class="foot">
+          <div class="wrap">
+            <div class="foot-grid">
+              <div class="foot-brand">
+                <a class="brand" href="/">b<em>64</em>file</a>
+                <p>浏览器里的 Base64 工具箱，转换全部在本机完成。</p>
+                <p class="foot-mail">反馈 <a href="mailto:greedy2899@gmail.com">greedy2899@gmail.com</a></p>
+              </div>
+
+              <div class="foot-col">
+                <h4>转换</h4>
+                <ul>
+                  <li><a href="/file-to-base64/">文件转 Base64</a></li>
+                  <li><a href="/base64-to-file/">Base64 转文件</a></li>
+                  <li><a href="/image-to-base64/">图片转 Base64</a></li>
+                </ul>
+              </div>
+
+              <div class="foot-col">
+                <h4>开发</h4>
+                <ul>
+                  <li><a href="/jwt-decode/">JWT 解码</a></li>
+                  <li><a href="/data-url/">Data URL</a></li>
+                  <li><a href="/base64-size-calculator/">大小计算器</a></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="foot-bar">
+              <div class="bar-row">© 2026 b64file</div>
+              <div class="bar-row">辽ICP备2026020275号-1</div>
+              <div class="bar-row">辽公网安备21010502000962号</div>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+(function () {
+  var boards = document.getElementById('boards');
+  var NATURAL = 1440 + 390 + 56;
+  var zoomVal = document.getElementById('zoomVal');
+
+  // 先按 100% 量出两块画板的真实高度，写进标签
+  boards.style.zoom = 1;
+  document.querySelectorAll('[data-h]').forEach(function (el) {
+    var target = document.getElementById(el.dataset.h);
+    if (target) {
+      el.textContent = '× ' + Math.round(target.getBoundingClientRect().height);
+    }
+  });
+
+  function apply(z, label) {
+    boards.style.zoom = z;
+    zoomVal.textContent = '缩放 ' + (label || (Math.round(z * 100) + '%'));
+  }
+
+  function fit() {
+    var avail = document.documentElement.clientWidth - 96;
+    var z = Math.min(1, Math.max(0.3, avail / NATURAL));
+    apply(z);
+    document.querySelectorAll('[data-zoom]').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.zoom === 'fit');
+    });
+  }
+
+  document.querySelectorAll('[data-zoom]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (b.dataset.zoom === 'fit') {
+        fit();
+      } else {
+        apply(1, '100%');
+        document.querySelectorAll('[data-zoom]').forEach(function (x) {
+          x.classList.toggle('on', x === b);
+        });
+      }
+    });
+  });
+
+  fit();
+  window.addEventListener('resize', function () {
+    var on = document.querySelector('[data-zoom].on');
+    if (on && on.dataset.zoom === 'fit') fit();
+  });
+
+  // 每块画板独立切主题
+  document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var board = btn.closest('.board');
+      if (!board) return;
+      board.dataset.theme = board.dataset.theme === 'dark' ? 'light' : 'dark';
+      btn.textContent = board.dataset.theme === 'dark' ? '◑' : '◐';
+    });
+  });
+})();
+</script>
+</body>
+</html>

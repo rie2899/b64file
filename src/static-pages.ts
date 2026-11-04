@@ -1535,6 +1535,16 @@ function jsonLd(page: PageId): unknown[] {
       url: absoluteUrl('/') || '/',
       description: 'Base64 转文件、文件转 Base64、文本编解码的本地在线工具。'
     });
+    // Organization：给 AI 搜索一个「这个站是谁」的实体锚点。
+    // WebSite 只说明「有个站」，实体信息（名字/logo/做什么）要靠 Organization 才传得出去。
+    graph.push({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'b64file',
+      url: absoluteUrl('/') || '/',
+      logo: absoluteUrl('/og-image.png') || '/og-image.png',
+      description: '免费在线 Base64 编解码与文件转换工具，所有转换在浏览器本地完成，文件不上传服务器。'
+    });
   }
 
   graph.push({
